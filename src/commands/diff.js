@@ -15,7 +15,7 @@ export async function commandDiff(options = {}) {
   const lockfilePath = path.join(cwd, 'behavior.lock');
 
   if (!fs.existsSync(lockfilePath)) {
-    console.error(`\x1b[31mError: No behavior.lock found in ${cwd}\x1b[0m`);
+    console.error(`\x1b[31m\x1b[1mError:\x1b[0m No \x1b[1mbehavior.lock\x1b[0m found in ${cwd}`);
     process.exit(1);
   }
 
@@ -23,7 +23,7 @@ export async function commandDiff(options = {}) {
   validateLockfile(lockfileRaw);
 
   Visualizer.printBanner();
-  console.log(`\x1b[36mComparing observed behavior against lockfile:\x1b[0m ${cwd}\n`);
+  Visualizer.printSessionContext({ cwd, cmd: options.cmd || 'npm test', engine: options.engine });
 
   const runner = new Runner({ cwd, engine: options.engine });
   let cmd = 'npm';
@@ -34,7 +34,16 @@ export async function commandDiff(options = {}) {
     args = parts.slice(1);
   }
 
+  if (!options.silent) {
+    Visualizer.printTargetFrameStart(`${cmd} ${args.join(' ')}`);
+  }
+
   const runResult = runner.runPhase('runtime', cmd, args, { silent: options.silent });
+
+  if (!options.silent) {
+    Visualizer.printTargetFrameEnd();
+  }
+
   const differ = new Differ(lockfileRaw);
   const diffResult = differ.diff(runResult.contract);
 

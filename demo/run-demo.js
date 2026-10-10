@@ -28,7 +28,7 @@ function banner(title) {
 
 function run(cmd, args, cwd = rootDir) {
   console.log(`\x1b[33m$ ${cmd} ${args.join(' ')}\x1b[0m`);
-  const res = spawnSync(cmd, args, { cwd, stdio: 'inherit', shell: true });
+  const res = spawnSync(cmd, args, { cwd, stdio: 'inherit' });
   return res.status;
 }
 
@@ -54,7 +54,7 @@ async function main() {
   fs.copyFileSync(safePkg, targetModule);
 
   console.log('\x1b[32mInitializing behavior.lock baseline...\x1b[0m');
-  run('node', [cliBin, 'init', '--cwd', demoAppDir, '--cmd', '"node test.js"']);
+  run('node', [cliBin, 'init', '--cwd', demoAppDir, '--cmd', 'node test.js']);
 
   sleep(1500);
 
@@ -70,7 +70,7 @@ async function main() {
   sleep(1500);
 
   console.log('\x1b[33mStep 2B: Run behaviorlock check (What happens under our contract):\x1b[0m');
-  run('node', [cliBin, 'check', '--cwd', demoAppDir, '--cmd', '"node test.js"']);
+  run('node', [cliBin, 'check', '--cwd', demoAppDir, '--cmd', 'node test.js']);
   console.log('\x1b[32m✓ RESULT: Supply-chain attack blocked! Bait credentials triggered trap.\x1b[0m\n');
 
   sleep(1500);
@@ -80,7 +80,7 @@ async function main() {
   fs.copyFileSync(telemetryPkg, targetModule);
 
   console.log('\x1b[33mStep 3A: Run behaviorlock check on new telemetry:\x1b[0m');
-  run('node', [cliBin, 'check', '--cwd', demoAppDir, '--cmd', '"node test.js"']);
+  run('node', [cliBin, 'check', '--cwd', demoAppDir, '--cmd', 'node test.js']);
 
   sleep(1000);
 
@@ -92,15 +92,15 @@ async function main() {
     '--cwd',
     demoAppDir,
     '--cmd',
-    '"node test.js"',
+    'node test.js',
     '--reason',
-    '"Vendor analytics documented and reviewed by Dev Lead"'
+    'Vendor analytics documented and reviewed by Dev Lead'
   ]);
 
   sleep(1000);
 
   console.log('\x1b[33mStep 3C: Re-run behaviorlock check:\x1b[0m');
-  run('node', [cliBin, 'check', '--cwd', demoAppDir, '--cmd', '"node test.js"']);
+  run('node', [cliBin, 'check', '--cwd', demoAppDir, '--cmd', 'node test.js']);
   console.log('\x1b[32m✓ RESULT: Contract updated and verified. Recorded into git history.\x1b[0m\n');
 
   sleep(1500);

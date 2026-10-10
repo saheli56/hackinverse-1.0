@@ -16,19 +16,19 @@ export async function commandApprove(id, options = {}) {
   const lockfilePath = path.join(cwd, 'behavior.lock');
 
   if (!id) {
-    console.error('\x1b[31mError: Missing violation ID to approve.\x1b[0m');
-    console.error('Usage: behaviorlock approve <id> --reason "Why this is allowed"');
+    console.error('\x1b[31m\x1b[1mError:\x1b[0m Missing violation ID to approve.');
+    console.error('Usage: behaviorlock approve <id> --reason "Why this is allowed"\n');
     process.exit(1);
   }
 
   if (!options.reason) {
-    console.error('\x1b[31mError: A written --reason is strictly required to approve behavior changes.\x1b[0m');
-    console.error('Example: behaviorlock approve ' + id + ' --reason "Vendor telemetry verified by secops"');
+    console.error('\x1b[31m\x1b[1mError:\x1b[0m A written --reason is strictly required for audit trails.');
+    console.error(`Example: behaviorlock approve ${id} --reason "Vendor telemetry verified by secops"\n`);
     process.exit(1);
   }
 
   if (!fs.existsSync(lockfilePath)) {
-    console.error(`\x1b[31mError: No behavior.lock found in ${cwd}\x1b[0m`);
+    console.error(`\x1b[31m\x1b[1mError:\x1b[0m No behavior.lock found in ${cwd}\n`);
     process.exit(1);
   }
 
@@ -54,8 +54,8 @@ export async function commandApprove(id, options = {}) {
   const targetViolation = diffResult.violations.find((v) => v.id === id);
 
   if (!targetViolation) {
-    console.error(`\x1b[31mError: No active violation found with ID '${id}'.\x1b[0m`);
-    console.error(`Run \x1b[36mbehaviorlock check\x1b[0m to list current violation IDs.`);
+    console.error(`\x1b[31m\x1b[1mError:\x1b[0m No active violation found with ID '${id}'.`);
+    console.error(`Run \x1b[36mbehaviorlock check\x1b[0m to list current violation IDs.\n`);
     process.exit(1);
   }
 
@@ -84,14 +84,5 @@ export async function commandApprove(id, options = {}) {
 
   fs.writeFileSync(lockfilePath, stringifyLockfile(lockfileRaw), 'utf8');
 
-  console.log(`
-\x1b[32m\x1b[1m✓ VIOLATION APPROVED & SIGNED INTO BEHAVIOR.LOCK\x1b[0m
-  \x1b[2mViolation ID:\x1b[0m  ${id}
-  \x1b[2mPackage:\x1b[0m       ${targetViolation.package}
-  \x1b[2mTarget:\x1b[0m        ${targetViolation.target}
-  \x1b[2mReason:\x1b[0m        "${options.reason}"
-  \x1b[2mSigned By:\x1b[0m     ${approvalRecord.approved_by}
-
-\x1b[33mGit status:\x1b[0m Review the git diff of \x1b[1mbehavior.lock\x1b[0m and commit with your PR.
-`);
+  Visualizer.renderApprovalReceipt(approvalRecord);
 }

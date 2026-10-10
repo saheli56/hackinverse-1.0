@@ -11,7 +11,7 @@ export async function runCLI(args = process.argv.slice(2)) {
   const parsed = parseArgs(args);
 
   if (parsed.flags.version || parsed.flags.v) {
-    console.log('behaviorlock v1.0.0 (October 2026)');
+    console.log('\x1b[36m\x1b[1mbehaviorlock\x1b[0m v1.0.0 (October 2026)');
     return;
   }
 
@@ -44,7 +44,7 @@ export async function runCLI(args = process.argv.slice(2)) {
       await commandDiff(options);
       break;
     default:
-      console.error(`\x1b[31mUnknown command: ${parsed.command}\x1b[0m\n`);
+      console.error(`\x1b[31m\x1b[1mUnknown command:\x1b[0m ${parsed.command}\n`);
       printHelp();
       process.exit(1);
   }
@@ -86,30 +86,30 @@ function parseArgs(args) {
 
 function printHelp() {
   console.log(`
-\x1b[36m\x1b[1mbehaviorlock\x1b[0m - A lockfile for what your software does.
+\x1b[36m\x1b[1m🔒 behavior.lock\x1b[0m \x1b[90m·\x1b[0m \x1b[2mRuntime Behavioral Contract Sandbox\x1b[0m
 
 \x1b[1mUSAGE:\x1b[0m
-  behaviorlock <command> [options]
+  \x1b[36mbehaviorlock\x1b[0m \x1b[33m<command>\x1b[0m [options]
 
 \x1b[1mCOMMANDS:\x1b[0m
-  \x1b[36minit\x1b[0m                  Runs the target in sandbox, records baseline behavior, and writes behavior.lock
-  \x1b[36mcheck\x1b[0m                 Re-runs in sandbox and verifies against behavior.lock (fails with exit 1 on violation)
-  \x1b[36mapprove <id>\x1b[0m          Signs an authorized behavior into behavior.lock with a required audit reason
-  \x1b[36mdiff\x1b[0m                  Inspects divergences between observed behavior and behavior.lock without blocking
+  \x1b[36minit\x1b[0m                  Runs sandbox baseline, captures behavior, and writes \x1b[1mbehavior.lock\x1b[0m
+  \x1b[36mcheck\x1b[0m                 Verifies current execution against contract (\x1b[31mfails CI on breach\x1b[0m)
+  \x1b[36mapprove\x1b[0m \x1b[33m<id>\x1b[0m          Cryptographically signs approved behavior with a written audit reason
+  \x1b[36mdiff\x1b[0m                  Non-blocking behavioral inspection and divergence diffing
 
 \x1b[1mOPTIONS:\x1b[0m
-  --cwd <path>          Working directory of target project (default: current directory)
-  --cmd "<command>"     Target test or execution command (default: "npm test --if-present")
-  --engine <engine>     Sandbox engine: 'runtime-hook' (fast, cross-platform) or 'kernel-strace' (Linux/WSL)
-  --reason "<text>"     Audit justification required when approving a violation
-  --expires "<date>"    Optional expiration date for approval (e.g. 2027-01-01)
-  --silent              Suppress target stdout during tracing
-  -v, --version         Show CLI version
-  -h, --help            Show help documentation
+  \x1b[33m--cwd\x1b[0m \x1b[2m<path>\x1b[0m          Target project directory \x1b[90m(default: current directory)\x1b[0m
+  \x1b[33m--cmd\x1b[0m \x1b[2m"<command>"\x1b[0m     Custom execution/test command \x1b[90m(default: "npm test --if-present")\x1b[0m
+  \x1b[33m--engine\x1b[0m \x1b[2m<name>\x1b[0m       Sandbox engine: \x1b[36m'runtime-hook'\x1b[0m (fast) or \x1b[36m'kernel-strace'\x1b[0m (Linux/WSL)
+  \x1b[33m--reason\x1b[0m \x1b[2m"<text>"\x1b[0m     Audit justification required when running \x1b[36mapprove\x1b[0m
+  \x1b[33m--expires\x1b[0m \x1b[2m"<date>"\x1b[0m   Optional expiration date for approval \x1b[90m(e.g. 2027-01-01)\x1b[0m
+  \x1b[33m--silent\x1b[0m              Suppress target application stdout during tracing
+  \x1b[33m-v, --version\x1b[0m         Show version information
+  \x1b[33m-h, --help\x1b[0m            Show this help guide
 
 \x1b[1mEXAMPLES:\x1b[0m
-  behaviorlock init
-  behaviorlock check
-  behaviorlock approve a1f3 --reason "Vendor documents opt-out telemetry; reviewed by dev lead"
+  \x1b[90m$ \x1b[0m\x1b[36mbehaviorlock init\x1b[0m
+  \x1b[90m$ \x1b[0m\x1b[36mbehaviorlock check\x1b[0m
+  \x1b[90m$ \x1b[0m\x1b[36mbehaviorlock approve 4163 --reason "Documented vendor telemetry reviewed by SecOps"\x1b[0m
 `);
 }

@@ -15,8 +15,8 @@ export async function commandCheck(options = {}) {
   const lockfilePath = path.join(cwd, 'behavior.lock');
 
   if (!fs.existsSync(lockfilePath)) {
-    console.error(`\x1b[31mError: No behavior.lock found in ${cwd}\x1b[0m`);
-    console.error(`Run \x1b[36mbehaviorlock init\x1b[0m first to establish the baseline.`);
+    console.error(`\x1b[31m\x1b[1mError:\x1b[0m No \x1b[1mbehavior.lock\x1b[0m found in ${cwd}`);
+    console.error(`Run \x1b[36mbehaviorlock init\x1b[0m first to establish the baseline contract.\n`);
     process.exit(1);
   }
 
@@ -24,7 +24,7 @@ export async function commandCheck(options = {}) {
   validateLockfile(lockfileRaw);
 
   Visualizer.printBanner();
-  console.log(`\x1b[36mChecking behavior contract in:\x1b[0m ${cwd}`);
+  Visualizer.printSessionContext({ cwd, cmd: options.cmd || 'npm test', engine: options.engine });
 
   const runner = new Runner({ cwd, engine: options.engine });
 
@@ -37,9 +37,15 @@ export async function commandCheck(options = {}) {
     args = parts.slice(1);
   }
 
-  console.log(`\x1b[2mExecuting target under sandbox tracer (${cmd} ${args.join(' ')})...\x1b[0m\n`);
+  if (!options.silent) {
+    Visualizer.printTargetFrameStart(`${cmd} ${args.join(' ')}`);
+  }
 
   const runResult = runner.runPhase('runtime', cmd, args, { silent: options.silent });
+
+  if (!options.silent) {
+    Visualizer.printTargetFrameEnd();
+  }
 
   const differ = new Differ(lockfileRaw);
   const diffResult = differ.diff(runResult.contract);
@@ -50,7 +56,7 @@ export async function commandCheck(options = {}) {
   // Generate visual HTML report
   const htmlPath = path.join(cwd, 'behavior.html');
   Visualizer.generateHtmlReport(diffResult, runResult.contract, htmlPath);
-  console.log(`\x1b[2mVisual graph report generated at: file://${htmlPath.replace(/\\/g, '/')}\x1b[0m\n`);
+  console.log(`\x1b[90m📊 Interactive report:\x1b[0m \x1b[36mfile://${htmlPath.replace(/\\/g, '/')}\x1b[0m\n`);
 
   if (!diffResult.passed) {
     process.exitCode = 1;

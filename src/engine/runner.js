@@ -47,11 +47,19 @@ export class Runner {
         const fullCmd = [command, ...args].join(' ');
         this.kernelTracer.runTracedCommand(fullCmd, this.cwd, env, traceFile);
       } else {
-        const result = spawnSync(command, args, {
+        // Execute cleanly without shell parsing issues
+        let execCmd = command;
+        let execArgs = [...args];
+        if (args.length === 0 && command.includes(' ')) {
+          const parts = command.split(' ');
+          execCmd = parts[0];
+          execArgs = parts.slice(1);
+        }
+
+        const result = spawnSync(execCmd, execArgs, {
           cwd: this.cwd,
           env,
-          stdio: options.silent ? 'pipe' : 'inherit',
-          shell: true
+          stdio: options.silent ? 'pipe' : 'inherit'
         });
         exitCode = result.status ?? 0;
       }

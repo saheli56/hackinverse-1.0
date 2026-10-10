@@ -14,11 +14,10 @@ export async function commandInit(options = {}) {
   const lockfilePath = path.join(cwd, 'behavior.lock');
 
   Visualizer.printBanner();
-  console.log(`\x1b[36mInitializing behavior contract for:\x1b[0m ${cwd}`);
+  Visualizer.printSessionContext({ cwd, cmd: options.cmd || 'npm test', engine: options.engine });
 
   const runner = new Runner({ cwd, engine: options.engine });
 
-  // Determine run target: npm test or custom script or node entry
   let cmd = 'npm';
   let args = ['test', '--if-present'];
 
@@ -28,9 +27,15 @@ export async function commandInit(options = {}) {
     args = parts.slice(1);
   }
 
-  console.log(`\x1b[2mExecuting target under sandbox tracer (${cmd} ${args.join(' ')})...\x1b[0m\n`);
+  if (!options.silent) {
+    Visualizer.printTargetFrameStart(`${cmd} ${args.join(' ')}`);
+  }
 
   const runResult = runner.runPhase('runtime', cmd, args, { silent: options.silent });
+
+  if (!options.silent) {
+    Visualizer.printTargetFrameEnd();
+  }
 
   const lockfile = createEmptyLockfile({ engine: options.engine });
   lockfile.packages = runResult.contract;
@@ -38,13 +43,13 @@ export async function commandInit(options = {}) {
   fs.writeFileSync(lockfilePath, stringifyLockfile(lockfile), 'utf8');
 
   const pkgCount = Object.keys(lockfile.packages).length;
-  console.log(`
-\x1b[32m\x1b[1m✓ SUCCESS: behavior.lock initialized successfully!\x1b[0m
-  \x1b[2mPath:\x1b[0m             ${lockfilePath}
-  \x1b[2mPackages Traced:\x1b[0m  ${pkgCount}
-  \x1b[2mRaw Events:\x1b[0m       ${runResult.rawEventsCount}
-
-\x1b[33mNext step:\x1b[0m Commit \x1b[1mbehavior.lock\x1b[0m to your git repository.
-Run \x1b[36mbehaviorlock check\x1b[0m in CI to enforce the contract on every update.
-`);
+  Visualizer.renderInitSuccess(
+    {
+      lockfilePath,
+      packageCount: pkgCount,
+      rawEventsCount: runResult.rawEventsCount,
+      engine: options.engine
+    },
+    lockfile.packages
+  );
 }
