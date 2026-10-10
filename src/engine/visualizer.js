@@ -31,9 +31,50 @@ const ANSI = {
   bgAmber: '\x1b[48;5;214m\x1b[38;5;232m'
 };
 
+function stripAnsi(str) {
+  return String(str || '').replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+}
+
 export class Visualizer {
+  static CARD_WIDTH = 76;
+
   static printBanner() {
     console.log(`\n${ANSI.sky}${ANSI.bold}◆ behavior.lock${ANSI.reset} ${ANSI.gray}v1.0.0${ANSI.reset} ${ANSI.darkGray}·${ANSI.reset} ${ANSI.dim}Runtime Capability Sandbox${ANSI.reset}`);
+  }
+
+  /**
+   * Renders a symmetric 4-sided closed card box
+   */
+  static renderCard(title, rows, options = {}) {
+    const width = options.width || this.CARD_WIDTH;
+    const border = options.border || ANSI.darkGray;
+    const isRounded = options.rounded !== false;
+
+    const topLeft = isRounded ? '╭' : '┌';
+    const topRight = isRounded ? '╮' : '┐';
+    const bottomLeft = isRounded ? '╰' : '└';
+    const bottomRight = isRounded ? '╯' : '┘';
+    const vert = '│';
+    const horiz = '─';
+
+    // Top border with optional title
+    if (title) {
+      const cleanTitle = stripAnsi(title);
+      const topBarLen = Math.max(0, width - cleanTitle.length - 4);
+      console.log(`${border}${topLeft}─ ${title} ${border}${horiz.repeat(topBarLen)}${topRight}${ANSI.reset}`);
+    } else {
+      console.log(`${border}${topLeft}${horiz.repeat(width - 2)}${topRight}${ANSI.reset}`);
+    }
+
+    // Body rows
+    for (const row of rows) {
+      const cleanRow = stripAnsi(row);
+      const padLen = Math.max(0, width - 4 - cleanRow.length);
+      console.log(`${border}${vert}${ANSI.reset}  ${row}${' '.repeat(padLen)}  ${border}${vert}${ANSI.reset}`);
+    }
+
+    // Bottom border
+    console.log(`${border}${bottomLeft}${horiz.repeat(width - 2)}${bottomRight}${ANSI.reset}`);
   }
 
   static printSessionContext(info = {}) {
@@ -41,23 +82,26 @@ export class Visualizer {
     const cmd = info.cmd || 'npm test';
     const engine = info.engine === 'kernel-strace' ? 'kernel-strace (Linux Syscall)' : 'runtime-hook (V8 Preload)';
 
-    console.log(`${ANSI.darkGray}╭─────────────────────────────────────────────────────────────${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Target:${ANSI.reset}  ${ANSI.white}${ANSI.bold}${path.basename(cwd)}${ANSI.reset} ${ANSI.gray}(${cwd})${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Command:${ANSI.reset} ${ANSI.sky}${cmd}${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Engine:${ANSI.reset}  ${ANSI.dim}${engine}${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}╰─────────────────────────────────────────────────────────────${ANSI.reset}\n`);
+    this.renderCard(`${ANSI.bold}Execution Context${ANSI.reset}`, [
+      `${ANSI.dim}Target:${ANSI.reset}   ${ANSI.white}${ANSI.bold}${path.basename(cwd)}${ANSI.reset} ${ANSI.gray}(${cwd})${ANSI.reset}`,
+      `${ANSI.dim}Command:${ANSI.reset}  ${ANSI.sky}${cmd}${ANSI.reset}`,
+      `${ANSI.dim}Engine:${ANSI.reset}   ${ANSI.dim}${engine}${ANSI.reset}`
+    ], { rounded: true });
+    console.log('');
   }
 
   static printTargetFrameStart(cmdStr) {
-    console.log(`${ANSI.darkGray}┌─ Target Output (${cmdStr}) ──────────────────────────${ANSI.reset}`);
+    const cleanCmd = `Sandbox Output (${cmdStr})`;
+    const padLen = Math.max(0, this.CARD_WIDTH - cleanCmd.length - 4);
+    console.log(`${ANSI.darkGray}┌─ ${cleanCmd} ${ANSI.darkGray}${'─'.repeat(padLen)}┐${ANSI.reset}`);
   }
 
   static printTargetFrameEnd() {
-    console.log(`${ANSI.darkGray}└─────────────────────────────────────────────────────────────${ANSI.reset}\n`);
+    console.log(`${ANSI.darkGray}└${'─'.repeat(this.CARD_WIDTH - 2)}┘${ANSI.reset}\n`);
   }
 
   /**
-   * Renders a styled capability matrix table
+   * Renders a closed, styled capability matrix table
    */
   static renderCapabilityMatrix(packages) {
     console.log(`${ANSI.darkGray}┌─────────────────────────┬──────────────┬──────────────┬──────────────┬──────────────┐${ANSI.reset}`);
@@ -84,17 +128,24 @@ export class Visualizer {
   static renderTerminalReport(diffResult, targetName = 'app') {
     if (diffResult.passed) {
       console.log(`${ANSI.emerald}${ANSI.bold}✔ CONTRACT SATISFIED${ANSI.reset} ${ANSI.gray}·${ANSI.reset} ${ANSI.white}${ANSI.bold}${targetName}${ANSI.reset}`);
-      console.log(`${ANSI.gray}  All observed runtime behaviors conform to committed policies in ${ANSI.white}behavior.lock${ANSI.reset}`);
+      console.log(`${ANSI.gray}  All observed runtime behaviors conform to committed policies in ${ANSI.white}behavior.lock${ANSI.reset}\n`);
       
-      console.log(`\n${ANSI.darkGray}╭─ Capability Verification ───────────────────────────────────${ANSI.reset}`);
-      console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.emerald}●${ANSI.reset} ${ANSI.bold}Network Sockets:${ANSI.reset}     Zero unapproved outbound endpoints`);
-      console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.emerald}●${ANSI.reset} ${ANSI.bold}Honeypot Canaries:${ANSI.reset}   All decoy credentials untouched`);
-      console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.emerald}●${ANSI.reset} ${ANSI.bold}Process Execution:${ANSI.reset}   Zero unauthorized child processes`);
-      console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.emerald}●${ANSI.reset} ${ANSI.bold}Filesystem Scope:${ANSI.reset}    Restricted within project boundaries`);
+      const verificationRows = [
+        `${ANSI.emerald}●${ANSI.reset} ${ANSI.bold}Network Sockets:${ANSI.reset}     Zero unapproved outbound endpoints`,
+        `${ANSI.emerald}●${ANSI.reset} ${ANSI.bold}Honeypot Canaries:${ANSI.reset}   All decoy credentials untouched`,
+        `${ANSI.emerald}●${ANSI.reset} ${ANSI.bold}Process Execution:${ANSI.reset}   Zero unauthorized child processes`,
+        `${ANSI.emerald}●${ANSI.reset} ${ANSI.bold}Filesystem Scope:${ANSI.reset}    Restricted within project boundaries`
+      ];
+
       if (diffResult.approvedMatches?.length > 0) {
-        console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.sky}ℹ${ANSI.reset} ${ANSI.bold}Signed Overrides:${ANSI.reset}    ${diffResult.approvedMatches.length} rule(s) active`);
+        verificationRows.push(`${ANSI.sky}ℹ${ANSI.reset} ${ANSI.bold}Signed Overrides:${ANSI.reset}    ${diffResult.approvedMatches.length} rule(s) active`);
       }
-      console.log(`${ANSI.darkGray}╰─────────────────────────────────────────────────────────────${ANSI.reset}\n`);
+
+      this.renderCard(`${ANSI.bold}Capability Verification${ANSI.reset}`, verificationRows, {
+        rounded: true,
+        border: ANSI.darkGray
+      });
+      console.log('');
       return;
     }
 
@@ -108,7 +159,7 @@ export class Visualizer {
     
     console.log(`${ANSI.gray}  Threat Level:${ANSI.reset} ${summaryParts.join(`${ANSI.gray} · ${ANSI.reset}`)}\n`);
 
-    // Beautiful Structured Breach Cards
+    // Symmetrically Closed Breach Cards
     for (let i = 0; i < diffResult.violations.length; i++) {
       const v = diffResult.violations[i];
       let border = ANSI.red;
@@ -122,29 +173,40 @@ export class Visualizer {
         badge = `${ANSI.sky}[MEDIUM]${ANSI.reset}`;
       }
 
-      console.log(`${border}┌─ Breach ${i + 1}/${diffResult.violations.length} · ${badge} ${ANSI.bold}${v.type}${ANSI.reset} ${ANSI.darkGray}(id: ${v.id})───────────────────────────────────${ANSI.reset}`);
-      console.log(`${border}│${ANSI.reset}  ${ANSI.dim}Package:${ANSI.reset}     ${ANSI.white}${ANSI.bold}${v.package}${ANSI.reset} ${ANSI.gray}(phase: ${v.phase})${ANSI.reset}`);
-      console.log(`${border}│${ANSI.reset}  ${ANSI.dim}Syscall:${ANSI.reset}     ${ANSI.gold}${v.target}${ANSI.reset}`);
-      console.log(`${border}│${ANSI.reset}  ${ANSI.dim}Signal:${ANSI.reset}      ${v.message}`);
-      console.log(`${border}│${ANSI.reset}  ${ANSI.dim}Action:${ANSI.reset}      ${ANSI.white}${v.remediation}${ANSI.reset}`);
-      console.log(`${border}└─────────────────────────────────────────────────────────────${ANSI.reset}\n`);
+      const cardTitle = `Breach ${i + 1}/${diffResult.violations.length} · ${badge} ${ANSI.bold}${v.type}${ANSI.reset} ${ANSI.darkGray}(id: ${v.id})${ANSI.reset}`;
+      const cardRows = [
+        `${ANSI.dim}Package:${ANSI.reset}     ${ANSI.white}${ANSI.bold}${v.package}${ANSI.reset} ${ANSI.gray}(phase: ${v.phase})${ANSI.reset}`,
+        `${ANSI.dim}Syscall:${ANSI.reset}     ${ANSI.gold}${v.target}${ANSI.reset}`,
+        `${ANSI.dim}Signal:${ANSI.reset}      ${v.message}`,
+        `${ANSI.dim}Action:${ANSI.reset}      ${ANSI.white}${v.remediation}${ANSI.reset}`
+      ];
+
+      this.renderCard(cardTitle, cardRows, {
+        border,
+        rounded: false
+      });
+      console.log('');
     }
 
     const firstId = diffResult.violations[0]?.id || '<id>';
-    console.log(`${ANSI.white}${ANSI.bold}Suggested Next Steps:${ANSI.reset}`);
-    console.log(`  ${ANSI.emerald}• Authorize legitimate update:${ANSI.reset}  ${ANSI.sky}behaviorlock approve ${firstId} --reason "Reviewed & verified"${ANSI.reset}`);
-    console.log(`  ${ANSI.red}• Reject malicious update:${ANSI.reset}      ${ANSI.gray}git restore package.json package-lock.json${ANSI.reset}\n`);
+    this.renderCard(`${ANSI.bold}Suggested Next Steps${ANSI.reset}`, [
+      `${ANSI.emerald}• Authorize legitimate update:${ANSI.reset}  ${ANSI.sky}behaviorlock approve ${firstId} --reason "Reviewed & verified"${ANSI.reset}`,
+      `${ANSI.red}• Reject malicious update:${ANSI.reset}      ${ANSI.gray}git restore package.json package-lock.json${ANSI.reset}`
+    ], { rounded: true, border: ANSI.darkGray });
+    console.log('');
   }
 
   static renderApprovalReceipt(approvalRecord) {
     console.log(`${ANSI.emerald}${ANSI.bold}✔ VIOLATION APPROVED & SIGNED${ANSI.reset}\n`);
-    console.log(`${ANSI.darkGray}╭─ Signed Contract Entry ─────────────────────────────────────${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Violation ID:${ANSI.reset} ${ANSI.sky}${ANSI.bold}${approvalRecord.id}${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Package:${ANSI.reset}      ${ANSI.white}${ANSI.bold}${approvalRecord.package}${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Permitted:${ANSI.reset}    ${JSON.stringify(approvalRecord.allow)}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Audit Reason:${ANSI.reset} ${ANSI.gold}"${approvalRecord.reason}"${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Signed By:${ANSI.reset}    ${ANSI.white}${approvalRecord.approved_by}${ANSI.reset} ${ANSI.gray}on ${approvalRecord.approved_at}${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}╰─────────────────────────────────────────────────────────────${ANSI.reset}`);
+
+    this.renderCard(`${ANSI.bold}Signed Contract Entry${ANSI.reset}`, [
+      `${ANSI.dim}Violation ID:${ANSI.reset} ${ANSI.sky}${ANSI.bold}${approvalRecord.id}${ANSI.reset}`,
+      `${ANSI.dim}Package:${ANSI.reset}      ${ANSI.white}${ANSI.bold}${approvalRecord.package}${ANSI.reset}`,
+      `${ANSI.dim}Permitted:${ANSI.reset}    ${JSON.stringify(approvalRecord.allow)}`,
+      `${ANSI.dim}Audit Reason:${ANSI.reset} ${ANSI.gold}"${approvalRecord.reason}"${ANSI.reset}`,
+      `${ANSI.dim}Signed By:${ANSI.reset}    ${ANSI.white}${approvalRecord.approved_by}${ANSI.reset} ${ANSI.gray}on ${approvalRecord.approved_at}${ANSI.reset}`
+    ], { rounded: true, border: ANSI.darkGray });
+
     console.log(`\n${ANSI.gray}Commit ${ANSI.white}${ANSI.bold}behavior.lock${ANSI.reset}${ANSI.gray} to your repository with your pull request.${ANSI.reset}\n`);
   }
 
@@ -153,11 +215,12 @@ export class Visualizer {
     
     this.renderCapabilityMatrix(packages);
 
-    console.log(`${ANSI.darkGray}╭─ Initialization Summary ────────────────────────────────────${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Packages Traced:${ANSI.reset}  ${ANSI.sky}${ANSI.bold}${meta.packageCount}${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Telemetry Events:${ANSI.reset} ${ANSI.white}${meta.rawEventsCount}${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}│${ANSI.reset}  ${ANSI.dim}Sandbox Engine:${ANSI.reset}   ${ANSI.dim}${meta.engine || 'runtime-hook'}${ANSI.reset}`);
-    console.log(`${ANSI.darkGray}╰─────────────────────────────────────────────────────────────${ANSI.reset}`);
+    this.renderCard(`${ANSI.bold}Initialization Summary${ANSI.reset}`, [
+      `${ANSI.dim}Packages Traced:${ANSI.reset}  ${ANSI.sky}${ANSI.bold}${meta.packageCount}${ANSI.reset}`,
+      `${ANSI.dim}Telemetry Events:${ANSI.reset} ${ANSI.white}${meta.rawEventsCount}${ANSI.reset}`,
+      `${ANSI.dim}Sandbox Engine:${ANSI.reset}   ${ANSI.dim}${meta.engine || 'runtime-hook'}${ANSI.reset}`
+    ], { rounded: true, border: ANSI.darkGray });
+
     console.log(`\n${ANSI.gold}Next step:${ANSI.reset} Commit ${ANSI.white}${ANSI.bold}behavior.lock${ANSI.reset} to your git repository.`);
     console.log(`Run ${ANSI.sky}behaviorlock check${ANSI.reset} in CI to enforce this contract on every pull request.\n`);
   }
