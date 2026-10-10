@@ -35,6 +35,157 @@ function stripAnsi(str) {
   return String(str || '').replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
 }
 
+/**
+ * Wraps an ANSI-formatted string to maxWidth printable characters without breaking escape codes
+ * and intelligently indents continuation lines to match key-value prefixes or bullets.
+ */
+function wrapAnsiString(str, maxWidth) {
+  if (stripAnsi(str).length <= maxWidth) return [str];
+
+  // Tokenize into ANSI escape codes, words, and whitespace runs
+  const tokens = [];
+  const regex = /(\x1b\[[0-9;]*[a-zA-Z])|([^\x1b\s]+)|(\s+)/g;
+  let match;
+  while ((match = regex.exec(str)) !== null) {
+    if (match[1]) tokens.push({ type: 'ansi', val: match[1] });
+    else if (match[2]) tokens.push({ type: 'word', val: match[2] });
+    else if (match[3]) tokens.push({ type: 'space', val: match[3] });
+  }
+
+  // Detect prefix indentation for continuation lines (e.g., 'Signal:      ' -> 12 spaces, '• ...:' -> 4 spaces)
+  let indentLen = 0;
+  const cleanStr = stripAnsi(str);
+  const colonMatch = cleanStr.match(/^([^\s:]+:\s+)/);
+  const bulletMatch = cleanStr.match(/^(\s*[•●*]\s+[^:]+:\s+)/);
+  if (colonMatch && colonMatch[1].length <= 16) {
+    indentLen = colonMatch[1].length;
+  } else if (bulletMatch) {
+    indentLen = 4;
+  } else {
+    const leadSpaceMatch = cleanStr.match(/^(\s+)/);
+    if (leadSpaceMatch) indentLen = Math.min(leadSpaceMatch[1].length, 8);
+  }
+
+  const lines = [];
+  let curTokens = [];
+  let curLen = 0;
+  let activeAnsi = [];
+
+  function flushLine() {
+    if (curTokens.length === 0) return;
+    // Strip trailing space tokens
+    while (curTokens.length > 0) {
+      const last = curTokens[curTokens.length - 1];
+      if (last.type === 'space') {
+        curTokens.pop();
+      } else {
+        break;
+      }
+    }
+    if (curTokens.length > 0) {
+      const lineText = curTokens.map(t => t.val).join('') + ANSI.reset;
+      lines.push(lineText);
+    }
+    curTokens = [];
+    curLen = 0;
+  }
+
+  let pendingBetween = [];
+  let pendingSpaceLen = 0;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.type === 'ansi') {
+      if (token.val === ANSI.reset) {
+        activeAnsi = [];
+      } else {
+        activeAnsi.push(token.val);
+      }
+      if (curLen === 0) {
+        curTokens.push(token);
+      } else {
+        pendingBetween.push(token);
+      }
+    } else if (token.type === 'space') {
+      if (curLen > 0) {
+        pendingBetween.push(token);
+        pendingSpaceLen += token.val.length;
+      }
+    } else if (token.type === 'word') {
+      const wordLen = token.val.length;
+
+      if (curLen === 0) {
+        // Line start: insert indent if continuation line
+        if (lines.length > 0 && indentLen > 0) {
+          curTokens.push(...activeAnsi.map(a => ({ type: 'ansi', val: a })));
+          curTokens.push({ type: 'space', val: ' '.repeat(indentLen) });
+          curLen += indentLen;
+        }
+        curTokens.push(...pendingBetween.filter(t => t.type === 'ansi'));
+        pendingBetween = [];
+        pendingSpaceLen = 0;
+
+        if (curLen + wordLen <= maxWidth) {
+          curTokens.push(token);
+          curLen += wordLen;
+        } else {
+          // Word alone exceeds maxWidth, hyphenate/split
+          if (wordLen > maxWidth - curLen && maxWidth - curLen > 6) {
+            const split = maxWidth - curLen - 1;
+            curTokens.push({ type: 'word', val: token.val.slice(0, split) + '-' });
+            flushLine();
+            tokens.splice(i + 1, 0, { type: 'word', val: token.val.slice(split) });
+          } else {
+            curTokens.push(token);
+            curLen += wordLen;
+          }
+        }
+      } else {
+        // Check if pending space + next word fits
+        if (curLen + pendingSpaceLen + wordLen <= maxWidth) {
+          curTokens.push(...pendingBetween);
+          curLen += pendingSpaceLen + wordLen;
+          curTokens.push(token);
+          pendingBetween = [];
+          pendingSpaceLen = 0;
+        } else {
+          // Does not fit: flush current line
+          flushLine();
+          const carryoverAnsi = pendingBetween.filter(t => t.type === 'ansi');
+          pendingBetween = [];
+          pendingSpaceLen = 0;
+
+          // Start new line with indent
+          if (indentLen > 0) {
+            curTokens.push(...activeAnsi.map(a => ({ type: 'ansi', val: a })));
+            curTokens.push({ type: 'space', val: ' '.repeat(indentLen) });
+            curLen += indentLen;
+          }
+          curTokens.push(...carryoverAnsi);
+
+          if (curLen + wordLen <= maxWidth) {
+            curTokens.push(token);
+            curLen += wordLen;
+          } else {
+            if (wordLen > maxWidth - curLen && maxWidth - curLen > 6) {
+              const split = maxWidth - curLen - 1;
+              curTokens.push({ type: 'word', val: token.val.slice(0, split) + '-' });
+              flushLine();
+              tokens.splice(i + 1, 0, { type: 'word', val: token.val.slice(split) });
+            } else {
+              curTokens.push(token);
+              curLen += wordLen;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  flushLine();
+  return lines.length > 0 ? lines : [str];
+}
+
 export class Visualizer {
   static CARD_WIDTH = 76;
 
@@ -43,10 +194,12 @@ export class Visualizer {
   }
 
   /**
-   * Renders a symmetric 4-sided closed card box
+   * Renders a symmetric 4-sided closed card box with word-wrapping and precise right border alignment
    */
   static renderCard(title, rows, options = {}) {
-    const width = options.width || this.CARD_WIDTH;
+    const cleanTitle = title ? stripAnsi(title) : '';
+    const minNeeded = cleanTitle ? cleanTitle.length + 6 : 10;
+    const width = Math.max(options.width || this.CARD_WIDTH, minNeeded);
     const border = options.border || ANSI.darkGray;
     const isRounded = options.rounded !== false;
 
@@ -57,20 +210,25 @@ export class Visualizer {
     const vert = '│';
     const horiz = '─';
 
+    // Available inner content width: width minus 2 border chars minus 4 margin spaces (2 left, 2 right)
+    const contentWidth = width - 6;
+
     // Top border with optional title
     if (title) {
-      const cleanTitle = stripAnsi(title);
-      const topBarLen = Math.max(0, width - cleanTitle.length - 4);
+      const topBarLen = Math.max(0, width - cleanTitle.length - 5);
       console.log(`${border}${topLeft}─ ${title} ${border}${horiz.repeat(topBarLen)}${topRight}${ANSI.reset}`);
     } else {
       console.log(`${border}${topLeft}${horiz.repeat(width - 2)}${topRight}${ANSI.reset}`);
     }
 
-    // Body rows
-    for (const row of rows) {
-      const cleanRow = stripAnsi(row);
-      const padLen = Math.max(0, width - 4 - cleanRow.length);
-      console.log(`${border}${vert}${ANSI.reset}  ${row}${' '.repeat(padLen)}  ${border}${vert}${ANSI.reset}`);
+    // Body rows with word-wrapping
+    for (const rawRow of rows) {
+      const wrappedLines = wrapAnsiString(rawRow, contentWidth);
+      for (const line of wrappedLines) {
+        const cleanLine = stripAnsi(line);
+        const padLen = Math.max(0, contentWidth - cleanLine.length);
+        console.log(`${border}${vert}${ANSI.reset}  ${line}${ANSI.reset}${' '.repeat(padLen)}  ${border}${vert}${ANSI.reset}`);
+      }
     }
 
     // Bottom border
@@ -91,8 +249,10 @@ export class Visualizer {
   }
 
   static printTargetFrameStart(cmdStr) {
-    const cleanCmd = `Sandbox Output (${cmdStr})`;
-    const padLen = Math.max(0, this.CARD_WIDTH - cleanCmd.length - 4);
+    const maxCmdLen = this.CARD_WIDTH - 22;
+    const displayCmd = cmdStr.length > maxCmdLen ? cmdStr.slice(0, maxCmdLen - 3) + '...' : cmdStr;
+    const cleanCmd = `Sandbox Output (${displayCmd})`;
+    const padLen = Math.max(0, this.CARD_WIDTH - cleanCmd.length - 5);
     console.log(`${ANSI.darkGray}┌─ ${cleanCmd} ${ANSI.darkGray}${'─'.repeat(padLen)}┐${ANSI.reset}`);
   }
 
