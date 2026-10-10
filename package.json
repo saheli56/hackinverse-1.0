@@ -9,7 +9,10 @@
   },
   "scripts": {
     "start": "node bin/behaviorlock.js",
+    "init": "node bin/behaviorlock.js init",
+    "check": "node bin/behaviorlock.js check",
     "ui": "node bin/behaviorlock.js ui",
+    "dev:ui": "npm --prefix dashboard run dev",
     "dashboard": "node bin/behaviorlock.js ui",
     "build:ui": "npm --prefix dashboard run build",
     "demo": "node demo/run-demo.js",

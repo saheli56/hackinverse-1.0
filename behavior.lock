@@ -1,0 +1,173 @@
+{
+  "approvals": [],
+  "generated": "2026-10-10",
+  "packages": {
+    "[project]": {
+      "install": {
+        "exec": [],
+        "fs_read": [],
+        "fs_write": [],
+        "network": []
+      },
+      "runtime": {
+        "exec": [],
+        "fs_read": [
+          "/usr/lib/node_modules/nopt/lib/nopt-lib.js",
+          "/usr/lib/node_modules/nopt/lib/nopt.js",
+          "/usr/lib/node_modules/nopt/lib/type-defs.js",
+          "/usr/lib/node_modules/nopt/node_modules/abbrev/lib/index.js",
+          "/usr/lib/node_modules/npm/bin/npm-cli.js",
+          "/usr/lib/node_modules/npm/lib/base-cmd.js",
+          "/usr/lib/node_modules/npm/lib/cli.js",
+          "/usr/lib/node_modules/npm/lib/cli/entry.js",
+          "/usr/lib/node_modules/npm/lib/cli/exit-handler.js",
+          "/usr/lib/node_modules/npm/lib/cli/update-notifier.js",
+          "/usr/lib/node_modules/npm/lib/cli/validate-engines.js",
+          "/usr/lib/node_modules/npm/lib/commands/run.js",
+          "/usr/lib/node_modules/npm/lib/commands/test.js",
+          "/usr/lib/node_modules/npm/lib/lifecycle-cmd.js",
+          "/usr/lib/node_modules/npm/lib/npm.js",
+          "/usr/lib/node_modules/npm/lib/utils/cmd-list.js",
+          "/usr/lib/node_modules/npm/lib/utils/display.js",
+          "/usr/lib/node_modules/npm/lib/utils/error-message.js",
+          "/usr/lib/node_modules/npm/lib/utils/explain-dep.js",
+          "/usr/lib/node_modules/npm/lib/utils/explain-eresolve.js",
+          "/usr/lib/node_modules/npm/lib/utils/format.js",
+          "/usr/lib/node_modules/npm/lib/utils/log-file.js",
+          "/usr/lib/node_modules/npm/lib/utils/npm-usage.js",
+          "/usr/lib/node_modules/npm/lib/utils/output-error.js",
+          "/usr/lib/node_modules/npm/lib/utils/timers.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/definitions/definition.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/definitions/definitions.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/definitions/index.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/env-replace.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/index.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/nerf-dart.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/parse-allow-scripts-list.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/parse-field.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/set-envs.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/type-defs.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/config/lib/umask.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/node-gyp/lib/index.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/package-json/lib/index.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/package-json/lib/normalize.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/package-json/lib/read-package.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/package-json/lib/sort.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/package-json/lib/update-dependencies.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/package-json/lib/update-scripts.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/package-json/lib/update-workspaces.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/promise-spawn/lib/escape.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/promise-spawn/lib/index.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/redact/lib/index.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/redact/lib/matchers.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/redact/lib/utils.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/make-spawn-args.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/package-envs.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/run-script-pkg.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/run-script.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/set-path.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/signal-manager.js",
+          "/usr/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/validate-options.js",
+          "/usr/lib/node_modules/npm/node_modules/abbrev/lib/index.js",
+          "/usr/lib/node_modules/npm/node_modules/ci-info/index.js",
+          "/usr/lib/node_modules/npm/node_modules/ci-info/vendors.json",
+          "/usr/lib/node_modules/npm/node_modules/fs-minipass/lib/index.js",
+          "/usr/lib/node_modules/npm/node_modules/graceful-fs/clone.js",
+          "/usr/lib/node_modules/npm/node_modules/graceful-fs/graceful-fs.js",
+          "/usr/lib/node_modules/npm/node_modules/graceful-fs/legacy-streams.js",
+          "/usr/lib/node_modules/npm/node_modules/graceful-fs/polyfills.js",
+          "/usr/lib/node_modules/npm/node_modules/ini/lib/ini.js",
+          "/usr/lib/node_modules/npm/node_modules/isexe/dist/commonjs/index.min.js",
+          "/usr/lib/node_modules/npm/node_modules/json-parse-even-better-errors/lib/index.js",
+          "/usr/lib/node_modules/npm/node_modules/minipass/dist/commonjs/index.js",
+          "/usr/lib/node_modules/npm/node_modules/proc-log/lib/index.js",
+          "/usr/lib/node_modules/npm/node_modules/walk-up-path/dist/commonjs/index.js",
+          "/usr/lib/node_modules/npm/node_modules/which/lib/index.js",
+          "/usr/lib/node_modules/npm/package.json",
+          "/usr/lib/node_modules/semver/classes/comparator.js",
+          "/usr/lib/node_modules/semver/classes/range.js",
+          "/usr/lib/node_modules/semver/classes/semver.js",
+          "/usr/lib/node_modules/semver/functions/clean.js",
+          "/usr/lib/node_modules/semver/functions/cmp.js",
+          "/usr/lib/node_modules/semver/functions/compare.js",
+          "/usr/lib/node_modules/semver/functions/eq.js",
+          "/usr/lib/node_modules/semver/functions/gt.js",
+          "/usr/lib/node_modules/semver/functions/gte.js",
+          "/usr/lib/node_modules/semver/functions/lt.js",
+          "/usr/lib/node_modules/semver/functions/lte.js",
+          "/usr/lib/node_modules/semver/functions/neq.js",
+          "/usr/lib/node_modules/semver/functions/parse.js",
+          "/usr/lib/node_modules/semver/functions/satisfies.js",
+          "/usr/lib/node_modules/semver/functions/valid.js",
+          "/usr/lib/node_modules/semver/internal/constants.js",
+          "/usr/lib/node_modules/semver/internal/debug.js",
+          "/usr/lib/node_modules/semver/internal/identifiers.js",
+          "/usr/lib/node_modules/semver/internal/lrucache.js",
+          "/usr/lib/node_modules/semver/internal/parse-options.js",
+          "/usr/lib/node_modules/semver/internal/re.js",
+          "file:///home/masum/Repos%20(Arch)/hackinverse-1.0/src/canary/index.js",
+          "file:///home/masum/Repos%20(Arch)/hackinverse-1.0/src/engine/differ.js",
+          "file:///home/masum/Repos%20(Arch)/hackinverse-1.0/src/engine/normalizer.js",
+          "file:///home/masum/Repos%20(Arch)/hackinverse-1.0/src/types/schema.js",
+          "file:///home/masum/Repos%20(Arch)/hackinverse-1.0/test/suite.js",
+          "file:///usr/lib/node_modules/npm/node_modules/chalk/source/index.js",
+          "file:///usr/lib/node_modules/npm/node_modules/chalk/source/utilities.js",
+          "file:///usr/lib/node_modules/npm/node_modules/chalk/source/vendor/ansi-styles/index.js",
+          "file:///usr/lib/node_modules/npm/node_modules/chalk/source/vendor/supports-color/index.js",
+          "file:///usr/lib/node_modules/npm/node_modules/supports-color/index.js"
+        ],
+        "fs_write": [
+          ".env.production",
+          "~/.aws/credentials",
+          "~/.ssh/id_*"
+        ],
+        "network": []
+      },
+      "secrets": [
+        {
+          "detail": "Target matches protected credential pattern",
+          "phase": "runtime",
+          "target": "~/.aws/credentials",
+          "type": "fs_write"
+        },
+        {
+          "detail": "Target matches protected credential pattern",
+          "phase": "runtime",
+          "target": "~/.ssh/id_*",
+          "type": "fs_write"
+        },
+        {
+          "detail": "Target matches protected credential pattern",
+          "phase": "runtime",
+          "target": ".env.production",
+          "type": "fs_write"
+        }
+      ]
+    },
+    "npm": {
+      "install": {
+        "exec": [],
+        "fs_read": [],
+        "fs_write": [],
+        "network": []
+      },
+      "runtime": {
+        "exec": [
+          "sh -c node test/suite.js"
+        ],
+        "fs_read": [],
+        "fs_write": [
+          "~/.npm/_logs/2026-10-10T19_22_15_637Z-debug-0.log"
+        ],
+        "network": []
+      },
+      "secrets": "none"
+    }
+  },
+  "sandbox": {
+    "engine": "runtime-hook",
+    "node": "v26.11.1",
+    "os": "linux"
+  },
+  "version": 1
+}

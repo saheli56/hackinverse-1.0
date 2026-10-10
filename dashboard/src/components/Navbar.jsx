@@ -4,108 +4,79 @@ import {
   ArrowsClockwise, 
   MagnifyingGlass, 
   GitBranch,
-  ShieldCheck,
-  WarningOctagon
+  ShieldCheck, 
+  WarningOctagon,
+  Sun,
+  Moon
 } from "@phosphor-icons/react";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 
-export function Navbar({ data, onRecheck, isRechecking, onOpenSearch, onSelectScenario, activeScenario, isSwitchingScenario }) {
+export function Navbar({ 
+  data, 
+  onRecheck, 
+  isRechecking, 
+  onOpenSearch, 
+  theme = "dark",
+  onToggleTheme
+}) {
   const { diffResult = {}, targetName = "app" } = data;
   const passed = diffResult.passed ?? (diffResult.violations?.length === 0);
+  const violationCount = diffResult.violations?.length || 0;
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-zinc-200 dark:border-zinc-800/80 bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-100 shadow-sm">
-            <LockKey size={18} weight="duotone" />
+          <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700/80 flex items-center justify-center text-zinc-900 dark:text-zinc-100 shadow-sm">
+            <LockKey size={18} weight="duotone" className="text-cyan-600 dark:text-cyan-400" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-xs tracking-tight text-zinc-100">behavior.lock</span>
-              <Badge variant="zinc" className="text-[10px] px-1.5 py-0">v1.0</Badge>
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-              <GitBranch size={11} className="text-zinc-500" />
-              <span>{targetName}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-sm tracking-tight text-zinc-900 dark:text-zinc-100 font-sans">behavior.lock</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-750 text-zinc-600 dark:text-zinc-400">
+              v1.0
+            </span>
+            <div className="hidden sm:flex items-center gap-1 text-[11px] text-zinc-500 dark:text-zinc-400 font-sans ml-2 pl-2 border-l border-zinc-200 dark:border-zinc-800">
+              <GitBranch size={11} className="text-zinc-400 dark:text-zinc-500" />
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">{targetName}</span>
             </div>
           </div>
         </div>
 
-        {/* Interactive Scenario Switcher */}
-        {onSelectScenario && (
-          <div className="hidden lg:flex items-center bg-zinc-900/90 border border-zinc-800 p-0.5 rounded-lg text-xs">
-            <button
-              onClick={() => onSelectScenario('safe')}
-              disabled={isSwitchingScenario}
-              className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
-                activeScenario === 'safe'
-                  ? 'bg-zinc-800 text-emerald-400 font-medium shadow-sm border border-zinc-700/60'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <ShieldCheck size={13} weight={activeScenario === 'safe' ? 'fill' : 'regular'} />
-              <span>Safe Baseline</span>
-            </button>
-            <button
-              onClick={() => onSelectScenario('attack')}
-              disabled={isSwitchingScenario}
-              className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
-                activeScenario === 'attack'
-                  ? 'bg-rose-950/70 text-rose-400 font-medium shadow-sm border border-rose-900/60'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <WarningOctagon size={13} weight={activeScenario === 'attack' ? 'fill' : 'regular'} />
-              <span>Zero-Day Attack</span>
-            </button>
-            <button
-              onClick={() => onSelectScenario('telemetry')}
-              disabled={isSwitchingScenario}
-              className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
-                activeScenario === 'telemetry'
-                  ? 'bg-amber-950/70 text-amber-400 font-medium shadow-sm border border-amber-900/60'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <ArrowsClockwise size={13} weight={activeScenario === 'telemetry' ? 'fill' : 'regular'} />
-              <span>Telemetry Drift</span>
-            </button>
-          </div>
-        )}
-
-        {/* Global Search & Actions */}
+        {/* Global Actions: Search, Theme & Verify */}
         <div className="flex items-center gap-2.5">
+          {/* Quick Search Button */}
           <Button
             variant="outline"
             size="sm"
             onClick={onOpenSearch}
-            className="hidden md:flex items-center gap-2 text-zinc-400 hover:text-zinc-100 border-zinc-800 bg-zinc-900/50"
+            className="hidden sm:flex items-center gap-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-sans h-8 px-3 text-xs"
           >
-            <MagnifyingGlass size={13} className="text-zinc-500" />
-            <span>Search breaches...</span>
-            <kbd className="ml-2 font-mono text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 border border-zinc-700">
+            <MagnifyingGlass size={13} className="text-zinc-400 dark:text-zinc-500" />
+            <span>Search incidents...</span>
+            <kbd className="ml-1.5 font-mono text-[10px] bg-zinc-200 dark:bg-zinc-800 px-1 py-0.2 rounded text-zinc-500 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
               Ctrl K
             </kbd>
           </Button>
 
-          {/* Real-time Status Badge */}
-          <Badge 
-            variant={passed ? "success" : "critical"}
-            className="hidden sm:inline-flex items-center gap-1.5 py-1 px-2.5"
-          >
-            <span className="relative flex h-1.5 w-1.5">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                passed ? "bg-emerald-400" : "bg-rose-400"
-              }`} />
-              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
-                passed ? "bg-emerald-500" : "bg-rose-500"
-              }`} />
+          {/* Theme Toggle Button */}
+          {onToggleTheme && (
+            <button
+              onClick={onToggleTheme}
+              title={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+              className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer h-8 w-8 flex items-center justify-center"
+            >
+              {theme === "dark" ? <Sun size={14} weight="bold" className="text-amber-400" /> : <Moon size={14} weight="bold" className="text-zinc-700" />}
+            </button>
+          )}
+
+          {/* Status Indicator */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-sans h-8">
+            <span className={`w-2 h-2 rounded-full ${passed ? "bg-emerald-500" : "bg-rose-500 animate-pulse"}`} />
+            <span className={`font-semibold text-[11px] ${passed ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+              {passed ? "Sealed" : `${violationCount} Breach${violationCount > 1 ? "es" : ""}`}
             </span>
-            <span>{passed ? "Contract Verified" : "Breach Detected"}</span>
-          </Badge>
+          </div>
 
           {/* Re-verify Sandbox Button */}
           {onRecheck && (
@@ -113,12 +84,12 @@ export function Navbar({ data, onRecheck, isRechecking, onOpenSearch, onSelectSc
               variant="zinc"
               size="sm"
               onClick={onRecheck}
-              disabled={isRechecking || isSwitchingScenario}
-              className="flex items-center gap-1.5 text-zinc-200"
+              disabled={isRechecking}
+              className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-100 border-zinc-300 dark:border-zinc-700 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-white font-sans text-xs h-8 px-3 font-semibold shadow-sm cursor-pointer"
               title="Re-run sandbox capability check"
             >
-              <ArrowsClockwise size={13} className={(isRechecking || isSwitchingScenario) ? "animate-spin" : ""} />
-              <span className="hidden sm:inline">Verify Sandbox</span>
+              <ArrowsClockwise size={13} className={isRechecking ? "animate-spin text-cyan-400 dark:text-cyan-600" : ""} />
+              <span>{isRechecking ? "Verifying..." : "Verify Sandbox"}</span>
             </Button>
           )}
         </div>

@@ -120,7 +120,12 @@ export class Normalizer {
 
         case 'exec_spawn': {
           if (evt.target) {
-            targetPhase.exec.add(evt.target.trim());
+            const trimmed = evt.target.trim();
+            // Ignore npm's internal invocation of the test script itself
+            if (pkgName === 'npm' && (trimmed.startsWith('sh -c node') || trimmed.startsWith('node test') || trimmed.includes('test.js'))) {
+              break;
+            }
+            targetPhase.exec.add(trimmed);
           }
           break;
         }
@@ -151,9 +156,21 @@ export class Normalizer {
   }
 
   isIgnoredFsRead(normalizedPath) {
+    if (!normalizedPath) return true;
     // Ignore internal node_modules reads within standard scope
     if (normalizedPath.startsWith('[PROJECT]/node_modules')) return true;
     if (normalizedPath.startsWith('node:')) return true;
+    // Ignore global Node.js / npm system execution paths
+    if (normalizedPath.startsWith('/usr/lib/node_modules') ||
+        normalizedPath.startsWith('/usr/local/lib/node_modules') ||
+        normalizedPath.startsWith('/usr/share/node') ||
+        normalizedPath.startsWith('file:///usr/lib/node_modules') ||
+        normalizedPath.startsWith('/usr/lib/node') ||
+        normalizedPath.startsWith('/etc/ssl') ||
+        normalizedPath.startsWith('/etc/hosts') ||
+        normalizedPath.startsWith('/etc/resolv.conf')) {
+      return true;
+    }
     return false;
   }
 }

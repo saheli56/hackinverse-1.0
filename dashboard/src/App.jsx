@@ -5,12 +5,12 @@ import { BentoGrid } from "./components/BentoGrid";
 import { BreachLedger } from "./components/BreachLedger";
 import { TopologyView } from "./components/TopologyView";
 import { ContractInspector } from "./components/ContractInspector";
+import { ArchitectureExplainer } from "./components/ArchitectureExplainer";
 import { ApproveModal } from "./components/ApproveModal";
 import { CommandPalette } from "./components/CommandPalette";
-import { Spotlight } from "./components/effects/Spotlight";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/ui/tabs";
 import { Badge } from "./components/ui/badge";
-import { Stack, GitFork, FileCode } from "@phosphor-icons/react";
+import { Stack, GitFork, FileCode, BookOpen, MagnifyingGlassPlus, MagnifyingGlassMinus } from "@phosphor-icons/react";
 
 // Fallback initial state if static or running standalone
 const DEFAULT_DATA = {
@@ -47,7 +47,7 @@ const DEFAULT_DATA = {
     sandbox: {
       engine: "runtime-hook (V8)",
       node: "v22",
-      os: "win32"
+      os: "linux"
     },
     packages: {
       "slug-lib": {
@@ -69,11 +69,35 @@ export function App() {
     return DEFAULT_DATA;
   });
 
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("behaviorlock_theme");
+      if (saved) return saved;
+    }
+    return "dark";
+  });
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      localStorage.setItem("behaviorlock_theme", theme);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === "dark" ? "light" : "dark"));
+  };
+
   const [activeTab, setActiveTab] = useState("ledger");
   const [selectedViolation, setSelectedViolation] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isRechecking, setIsRechecking] = useState(false);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(100);
   const [activeScenario, setActiveScenario] = useState(() => {
     if (typeof window !== "undefined" && window.__BEHAVIORLOCK_DATA__?.scenario) {
       return window.__BEHAVIORLOCK_DATA__.scenario;
@@ -131,6 +155,10 @@ export function App() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(150, prev + 10));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(70, prev - 10));
+  const handleZoomReset = () => setZoomLevel(100);
 
   const handleRecheck = async () => {
     setIsRechecking(true);
@@ -223,57 +251,61 @@ export function App() {
   const violations = data.diffResult?.violations || [];
 
   return (
-    <div className="relative min-h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
-      {/* Aceternity Subtle Background Grid */}
-      <div className="fixed inset-0 pointer-events-none opacity-30 z-0 bg-grid-zinc [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
-
-      {/* Aceternity Subtle Spotlight */}
-      <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="#ffffff" />
-
+    <div className="min-h-screen bg-zinc-50 dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 font-sans transition-colors duration-200">
       {/* Application Shell */}
-      <div className="relative z-10 flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen">
         <Navbar 
           data={data}
           onRecheck={handleRecheck}
           isRechecking={isRechecking}
           onOpenSearch={() => setIsSearchOpen(true)}
-          onSelectScenario={handleSelectScenario}
-          activeScenario={activeScenario}
-          isSwitchingScenario={isSwitchingScenario}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
 
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Hero Triage */}
+        <main 
+          className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 transition-all duration-150 origin-top"
+          style={{ zoom: `${zoomLevel}%` }}
+        >
+          {/* Hero Triage with Embedded Scenario Playground */}
           <HeroTriage 
             data={data} 
             onApproveClick={(v) => setSelectedViolation(v)}
+            onSelectScenario={handleSelectScenario}
+            activeScenario={activeScenario}
+            isSwitchingScenario={isSwitchingScenario}
           />
 
-          {/* Aceternity Bento Grid */}
+          {/* Bento Grid */}
           <BentoGrid data={data} />
 
           {/* Radix UI + shadcn Tabs Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex items-center justify-center mb-6">
-              <TabsList className="bg-zinc-900 border-zinc-800">
-                <TabsTrigger value="ledger" className="gap-2">
+              <TabsList className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-1">
+                <TabsTrigger value="ledger" className="gap-2 font-sans font-medium text-xs">
                   <Stack size={14} weight={activeTab === "ledger" ? "fill" : "regular"} />
                   <span>Incident Ledger</span>
                   {violations.length > 0 && (
-                    <Badge variant="critical" className="ml-1 text-[10px] py-0 px-1.5">
+                    <Badge variant="critical" className="ml-1 text-[10px] py-0 px-1.5 font-mono">
                       {violations.length}
                     </Badge>
                   )}
                 </TabsTrigger>
 
-                <TabsTrigger value="topology" className="gap-2">
+                <TabsTrigger value="topology" className="gap-2 font-sans font-medium text-xs">
                   <GitFork size={14} weight={activeTab === "topology" ? "fill" : "regular"} />
                   <span>Process Topology</span>
                 </TabsTrigger>
 
-                <TabsTrigger value="contract" className="gap-2">
+                <TabsTrigger value="contract" className="gap-2 font-sans font-medium text-xs">
                   <FileCode size={14} weight={activeTab === "contract" ? "fill" : "regular"} />
                   <span>behavior.lock</span>
+                </TabsTrigger>
+
+                <TabsTrigger value="explainer" className="gap-2 font-sans font-medium text-xs">
+                  <BookOpen size={14} weight={activeTab === "explainer" ? "fill" : "regular"} />
+                  <span>Architecture & Explainer</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -292,13 +324,46 @@ export function App() {
             <TabsContent value="contract">
               <ContractInspector contract={data.contract} />
             </TabsContent>
+
+            <TabsContent value="explainer">
+              <ArchitectureExplainer />
+            </TabsContent>
           </Tabs>
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-zinc-900 py-6 text-center text-xs text-zinc-500">
+        <footer className="border-t border-zinc-200 dark:border-zinc-850 py-6 text-center text-xs text-zinc-500 font-sans">
           behavior.lock · Runtime Capability Sandbox · HackInverse 2026
         </footer>
+      </div>
+
+      {/* Floating Canvas Zoom Controls (Bottom-Right, Figma/Linear style) */}
+      <div className="fixed bottom-5 right-5 z-40 flex items-center bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 rounded-lg p-1 shadow-lg shadow-black/10">
+        <button
+          onClick={handleZoomOut}
+          disabled={zoomLevel <= 70}
+          title="Zoom Out (-10%)"
+          className="p-1 px-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors disabled:opacity-30 cursor-pointer"
+        >
+          <MagnifyingGlassMinus size={14} />
+        </button>
+
+        <button
+          onClick={handleZoomReset}
+          title="Reset Zoom (100%)"
+          className="px-2 py-0.5 text-[11px] font-mono text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+        >
+          {zoomLevel}%
+        </button>
+
+        <button
+          onClick={handleZoomIn}
+          disabled={zoomLevel >= 150}
+          title="Zoom In (+10%)"
+          className="p-1 px-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors disabled:opacity-30 cursor-pointer"
+        >
+          <MagnifyingGlassPlus size={14} />
+        </button>
       </div>
 
       {/* Modals & Dialogs */}

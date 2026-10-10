@@ -2,6 +2,8 @@
  * behaviorlock CLI Dispatcher
  */
 
+import path from 'node:path';
+import fs from 'node:fs';
 import { commandInit } from './commands/init.js';
 import { commandCheck } from './commands/check.js';
 import { commandApprove } from './commands/approve.js';
@@ -21,8 +23,17 @@ export async function runCLI(args = process.argv.slice(2)) {
     return;
   }
 
+  let targetCwd = parsed.flags.cwd || process.cwd();
+  // Auto-target demo project if running from repo root
+  if (!parsed.flags.cwd) {
+    const demoDir = path.join(targetCwd, 'demo', 'demo-app');
+    if (fs.existsSync(path.join(demoDir, 'package.json'))) {
+      targetCwd = demoDir;
+    }
+  }
+
   const options = {
-    cwd: parsed.flags.cwd || process.cwd(),
+    cwd: targetCwd,
     engine: parsed.flags.engine || 'runtime-hook',
     cmd: parsed.flags.cmd,
     silent: parsed.flags.silent || false,

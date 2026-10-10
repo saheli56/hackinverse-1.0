@@ -1,6 +1,6 @@
 /**
  * Command: behaviorlock ui
- * Launches the interactive 2026 React Security Studio (Server & Single-file SPA)
+ * Launches the interactive 2026 React Security Studio (Server & Dynamic SPA)
  */
 
 import http from 'node:http';
@@ -49,32 +49,39 @@ export async function commandUi(options = {}) {
   }
   const runner = new Runner({ cwd: activeCwd, engine: options.engine });
 
-  if (fs.existsSync(lockfilePath)) {
-    contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
-    validateLockfile(contract);
-    runResult = runner.runPhase('runtime', cmd, args, { silent: true });
-    differ = new Differ(contract);
-    diffResult = differ.diff(runResult.contract);
-  } else {
-    contract = {
-      version: 1,
-      generated: new Date().toISOString().split('T')[0],
-      sandbox: { engine: 'runtime-hook (V8)', node: process.version, os: process.platform },
-      packages: {},
-      approvals: []
-    };
-    diffResult = {
-      passed: true,
-      summary: { critical: 0, high: 0, medium: 0, total: 0 },
-      violations: [],
-      approvedMatches: []
-    };
-  }
+  const reloadData = () => {
+    try {
+      if (fs.existsSync(lockfilePath)) {
+        contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
+        validateLockfile(contract);
+        runResult = runner.runPhase('runtime', cmd, args, { silent: true });
+        differ = new Differ(contract);
+        diffResult = differ.diff(runResult.contract);
+      } else {
+        contract = {
+          version: 1,
+          generated: new Date().toISOString().split('T')[0],
+          sandbox: { engine: 'runtime-hook (V8)', node: process.version, os: process.platform },
+          packages: {},
+          approvals: []
+        };
+        diffResult = {
+          passed: true,
+          summary: { critical: 0, high: 0, medium: 0, total: 0 },
+          violations: [],
+          approvedMatches: []
+        };
+      }
+    } catch {
+      // fallback
+    }
+  };
 
-  // Locate compiled React bundle
+  reloadData();
+
+  // Locate compiled React bundle (dynamically re-read so rebuilds reflect immediately)
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const distPath = path.resolve(__dirname, '../../dashboard/dist/index.html');
-  let reactTemplate = fs.existsSync(distPath) ? fs.readFileSync(distPath, 'utf8') : null;
 
   // Spin up local Studio HTTP server
   const port = options.port || 4949;
@@ -92,7 +99,7 @@ export async function commandUi(options = {}) {
 
     const url = new URL(req.url, `http://localhost:${port}`);
 
-    // GET /api/data
+    // GET /api/data (dynamic reload from disk)
     if (url.pathname === '/api/data' && req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ diffResult, contract, targetName }));
@@ -102,11 +109,7 @@ export async function commandUi(options = {}) {
     // POST /api/check (Re-run sandbox telemetry check)
     if (url.pathname === '/api/check' && req.method === 'POST') {
       try {
-        contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
-        runResult = runner.runPhase('runtime', cmd, args, { silent: true });
-        differ = new Differ(contract);
-        diffResult = differ.diff(runResult.contract);
-
+        reloadData();
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ diffResult, contract, targetName }));
       } catch (err) {
@@ -150,10 +153,7 @@ export async function commandUi(options = {}) {
             }
           }
 
-          contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
-          runResult = runner.runPhase('runtime', cmd, args, { silent: true });
-          differ = new Differ(contract);
-          diffResult = differ.diff(runResult.contract);
+          reloadData();
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ diffResult, contract, targetName, scenario }));
@@ -172,7 +172,7 @@ export async function commandUi(options = {}) {
       req.on('end', () => {
         try {
           const { id, reason, approved_by } = JSON.parse(body);
-          const targetViolation = diffResult.violations.find(v => v.id === id);
+          const targetViolation = diffResult?.violations?.find(v => v.id === id);
 
           if (!targetViolation) {
             res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -208,8 +208,7 @@ export async function commandUi(options = {}) {
           fs.writeFileSync(lockfilePath, stringifyLockfile(contract), 'utf8');
 
           // Re-evaluate diff
-          differ = new Differ(contract);
-          diffResult = differ.diff(runResult.contract);
+          reloadData();
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ diffResult, contract, targetName }));
@@ -221,14 +220,15 @@ export async function commandUi(options = {}) {
       return;
     }
 
-    // Serve HTML (Root)
+    // Serve HTML (Root) - dynamically read dist/index.html on every request so new builds appear immediately
     if (url.pathname === '/' || url.pathname === '/index.html') {
       const dataJson = JSON.stringify({ diffResult, contract, targetName }).replace(/</g, '\\u003c');
       const injection = `<script>window.__BEHAVIORLOCK_DATA__ = ${dataJson};</script>`;
 
       let html;
-      if (reactTemplate) {
-        html = reactTemplate.replace('<div id="root"></div>', `<div id="root"></div>\n    ${injection}`);
+      const currentTemplate = fs.existsSync(distPath) ? fs.readFileSync(distPath, 'utf8') : null;
+      if (currentTemplate) {
+        html = currentTemplate.replace('<div id="root"></div>', `<div id="root"></div>\n    ${injection}`);
       } else {
         html = `<!DOCTYPE html><html><head><title>behavior.lock</title></head><body><div id="root"></div>${injection}</body></html>`;
       }
