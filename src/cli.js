@@ -86,30 +86,30 @@ function parseArgs(args) {
 
 function printHelp() {
   console.log(`
-\x1b[36m\x1b[1m🔒 behavior.lock\x1b[0m \x1b[90m·\x1b[0m \x1b[2mRuntime Behavioral Contract Sandbox\x1b[0m
+\x1b[1mbehavior.lock\x1b[0m \x1b[90m- Runtime security capability lockfile\x1b[0m
 
 \x1b[1mUSAGE:\x1b[0m
-  \x1b[36mbehaviorlock\x1b[0m \x1b[33m<command>\x1b[0m [options]
+  behaviorlock \x1b[90m<command> [flags]\x1b[0m
 
 \x1b[1mCOMMANDS:\x1b[0m
-  \x1b[36minit\x1b[0m                  Runs sandbox baseline, captures behavior, and writes \x1b[1mbehavior.lock\x1b[0m
-  \x1b[36mcheck\x1b[0m                 Verifies current execution against contract (\x1b[31mfails CI on breach\x1b[0m)
-  \x1b[36mapprove\x1b[0m \x1b[33m<id>\x1b[0m          Cryptographically signs approved behavior with a written audit reason
-  \x1b[36mdiff\x1b[0m                  Non-blocking behavioral inspection and divergence diffing
+  init            Run target in sandbox and record baseline behavior.lock
+  check           Verify execution against behavior.lock (fails CI on breach)
+  approve <id>    Sign an approved behavioral change with an audit reason
+  diff            Inspect behavioral drift without blocking
 
-\x1b[1mOPTIONS:\x1b[0m
-  \x1b[33m--cwd\x1b[0m \x1b[2m<path>\x1b[0m          Target project directory \x1b[90m(default: current directory)\x1b[0m
-  \x1b[33m--cmd\x1b[0m \x1b[2m"<command>"\x1b[0m     Custom execution/test command \x1b[90m(default: "npm test --if-present")\x1b[0m
-  \x1b[33m--engine\x1b[0m \x1b[2m<name>\x1b[0m       Sandbox engine: \x1b[36m'runtime-hook'\x1b[0m (fast) or \x1b[36m'kernel-strace'\x1b[0m (Linux/WSL)
-  \x1b[33m--reason\x1b[0m \x1b[2m"<text>"\x1b[0m     Audit justification required when running \x1b[36mapprove\x1b[0m
-  \x1b[33m--expires\x1b[0m \x1b[2m"<date>"\x1b[0m   Optional expiration date for approval \x1b[90m(e.g. 2027-01-01)\x1b[0m
-  \x1b[33m--silent\x1b[0m              Suppress target application stdout during tracing
-  \x1b[33m-v, --version\x1b[0m         Show version information
-  \x1b[33m-h, --help\x1b[0m            Show this help guide
+\x1b[1mFLAGS:\x1b[0m
+  --cwd <path>          Target directory \x1b[90m(default: .)\x1b[0m
+  --cmd "<command>"     Execution/test command \x1b[90m(default: "npm test --if-present")\x1b[0m
+  --engine <name>       Sandbox engine: \x1b[90m'runtime-hook' or 'kernel-strace'\x1b[0m
+  --reason "<text>"     Audit justification required for approve
+  --expires "<date>"    Optional expiration date \x1b[90m(e.g. 2027-01-01)\x1b[0m
+  --silent              Suppress target stdout during tracing
+  -v, --version         Show version
+  -h, --help            Show help
 
 \x1b[1mEXAMPLES:\x1b[0m
-  \x1b[90m$ \x1b[0m\x1b[36mbehaviorlock init\x1b[0m
-  \x1b[90m$ \x1b[0m\x1b[36mbehaviorlock check\x1b[0m
-  \x1b[90m$ \x1b[0m\x1b[36mbehaviorlock approve 4163 --reason "Documented vendor telemetry reviewed by SecOps"\x1b[0m
+  \x1b[90m$ \x1b[0mbehaviorlock init
+  \x1b[90m$ \x1b[0mbehaviorlock check
+  \x1b[90m$ \x1b[0mbehaviorlock approve 4163 --reason "Vendor analytics reviewed and authorized"
 `);
 }

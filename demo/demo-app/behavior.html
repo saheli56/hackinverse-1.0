@@ -7,57 +7,70 @@
   <style>
     :root {
       --bg: #090d13;
-      --card: #121820;
-      --card-inner: #18222e;
-      --border: #232f3e;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
+      --card: #111722;
+      --card-alt: #161e2e;
+      --border: #212c3d;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
       --accent: #38bdf8;
-      --danger: #f85149;
-      --danger-bg: rgba(248, 81, 73, 0.12);
-      --warning: #fbbf24;
-      --warning-bg: rgba(251, 191, 36, 0.12);
-      --success: #34d399;
-      --success-bg: rgba(52, 211, 153, 0.12);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.08);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.08);
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.08);
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
-    body { background: var(--bg); color: var(--text); padding: 2.5rem; line-height: 1.6; }
-    .container { max-width: 1100px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
-    .logo { font-size: 1.5rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
-    .logo span { color: var(--accent); }
-    .status-badge { padding: 0.45rem 1.2rem; border-radius: 999px; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase; }
-    .status-badge.failed { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); }
-    .status-badge.passed { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-bottom: 2.5rem; }
-    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.4rem; }
-    .stat-val { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.2rem; }
-    .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
-    .section-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; color: #fff; display: flex; align-items: center; gap: 0.5rem; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 2.5rem; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-sans); }
+    body { background: var(--bg); color: var(--text); padding: 2.5rem; line-height: 1.5; }
+    .container { max-width: 1040px; margin: 0 auto; }
     
-    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.9rem; }
-    th { text-align: left; padding: 0.8rem; border-bottom: 2px solid var(--border); color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
-    td { padding: 0.8rem; border-bottom: 1px solid var(--border); }
-    tr:hover { background: rgba(255,255,255,0.02); }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-title { font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+    .brand-title span { color: var(--text-muted); font-weight: 400; font-size: 0.9rem; margin-left: 0.5rem; }
 
-    .violation-row { border-left: 4px solid var(--danger); background: var(--card-inner); padding: 1.2rem; margin-bottom: 1rem; border-radius: 0 8px 8px 0; }
-    .violation-row.HIGH { border-left-color: var(--warning); }
-    .violation-row.MEDIUM { border-left-color: var(--accent); }
-    .violation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
-    .v-title { font-weight: 700; font-size: 1.05rem; }
-    .v-id { background: rgba(56, 189, 248, 0.15); color: var(--accent); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-family: monospace; }
-    .v-meta { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.6rem; }
-    .v-target { font-family: monospace; background: #000; padding: 0.35rem 0.7rem; border-radius: 6px; display: inline-block; font-size: 0.9rem; color: #ff7b72; border: 1px solid #30363d; }
-    .graph-view { display: flex; align-items: center; justify-content: center; min-height: 200px; background: #070b10; border-radius: 8px; padding: 1.5rem; border: 1px solid var(--border); }
+    .status-badge { padding: 0.35rem 0.85rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem; letter-spacing: 0.02em; }
+    .status-badge.failed { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.25); }
+    .status-badge.passed { background: var(--success-bg); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.25); }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+    .stat-val { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: #fff; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 2rem; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    
+    code { font-family: var(--font-mono); font-size: 0.825rem; background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--border); }
+    .tag-id { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); }
+
+    .violation-card { border: 1px solid var(--border); background: var(--card-alt); border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem; }
+    .violation-card.CRITICAL { border-left: 3px solid var(--danger); }
+    .violation-card.HIGH { border-left: 3px solid var(--warning); }
+    .violation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .v-type { font-weight: 600; font-size: 0.9rem; }
+    .v-meta { color: var(--text-muted); font-size: 0.825rem; margin-bottom: 0.5rem; }
+    .v-msg { font-size: 0.875rem; color: var(--text); }
+    .v-remedy { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem; }
+
+    .graph-view { display: flex; align-items: center; justify-content: center; min-height: 180px; background: #070a10; border-radius: 6px; padding: 1rem; border: 1px solid var(--border); }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">🔒 behavior<span>.lock</span> <small style="font-size: 0.85rem; color: var(--text-muted); font-weight: 400; margin-left: 0.5rem;">Runtime Contract Inspector</small></div>
+      <div class="brand">
+        <div class="brand-title">behavior.lock <span>Runtime Security Contract Report</span></div>
+      </div>
       <div class="status-badge passed">
-        ✔ CONTRACT SATISFIED
+        Contract Satisfied
       </div>
     </div>
 
@@ -75,41 +88,41 @@
         <div class="stat-label">Medium Severity</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val" style="color: var(--success);">0</div>
+        <div class="stat-val" style="color: var(--success);">1</div>
         <div class="stat-label">Approved Rules</div>
       </div>
     </div>
 
-    <h2 class="section-title">📊 Threat & Capability Signals Table</h2>
+    <h2 class="section-title">Signals Overview</h2>
     <div class="card">
-      <p style="color: var(--success); font-weight: 500;">✔ Zero violations detected. All processes and network endpoints match approved behavior.lock.</p>
+      <p style="color: var(--success); font-size: 0.9rem;">Zero unauthorized activities detected. System executed completely within approved boundaries.</p>
     </div>
 
-    <h2 class="section-title">🔍 Detailed Behavioral Breach Log</h2>
+    <h2 class="section-title">Breach Details</h2>
     <div class="card">
-      <p style="color: var(--success);">All target code executed cleanly within authorized capability envelopes.</p>
+      <p style="color: var(--text-muted); font-size: 0.875rem;">No breaches recorded.</p>
     </div>
 
-    <h2 class="section-title">🗺️ Visual Capability & Threat Graph</h2>
+    <h2 class="section-title">Execution Topology</h2>
     <div class="card">
       <div class="graph-view">
-        <svg width="100%" height="160" viewBox="0 0 800 160" xmlns="http://www.w3.org/2000/svg">
-          <rect x="30" y="55" width="140" height="50" rx="6" fill="#18222e" stroke="#38bdf8" />
-          <text x="100" y="85" text-anchor="middle" font-size="12" fill="#fff" font-family="monospace">Target Project</text>
+        <svg width="100%" height="140" viewBox="0 0 740 140" xmlns="http://www.w3.org/2000/svg">
+          <rect x="20" y="45" width="130" height="46" rx="6" fill="#161e2e" stroke="#212c3d" />
+          <text x="85" y="73" text-anchor="middle" font-size="12" fill="#e2e8f0" font-family="var(--font-sans)">Target Project</text>
 
-          <line x1="170" y1="80" x2="310" y2="80" stroke="#232f3e" stroke-width="2" stroke-dasharray="4" />
+          <line x1="150" y1="68" x2="270" y2="68" stroke="#212c3d" stroke-width="1.5" stroke-dasharray="3" />
 
-          <rect x="310" y="55" width="160" height="50" rx="6" fill="#18222e" stroke="#fbbf24" />
-          <text x="390" y="85" text-anchor="middle" font-size="12" fill="#fff" font-family="monospace">Dependency Runtime</text>
+          <rect x="270" y="45" width="150" height="46" rx="6" fill="#161e2e" stroke="#212c3d" />
+          <text x="345" y="73" text-anchor="middle" font-size="12" fill="#e2e8f0" font-family="var(--font-sans)">Dependencies</text>
 
-          <line x1="470" y1="80" x2="610" y2="40" stroke="#232f3e" stroke-width="2.5" />
-          <line x1="470" y1="80" x2="610" y2="120" stroke="#232f3e" stroke-width="2.5" />
+          <line x1="420" y1="68" x2="540" y2="35" stroke="#212c3d" stroke-width="1.5" />
+          <line x1="420" y1="68" x2="540" y2="100" stroke="#212c3d" stroke-width="1.5" />
 
-          <rect x="610" y="15" width="170" height="50" rx="6" fill="#18222e" stroke="#232f3e" />
-          <text x="695" y="45" text-anchor="middle" font-size="12" fill="#fff" font-family="monospace">Bait Credentials [🚨]</text>
+          <rect x="540" y="15" width="160" height="42" rx="6" fill="#161e2e" stroke="#212c3d" />
+          <text x="620" y="41" text-anchor="middle" font-size="12" fill="#94a3b8" font-family="var(--font-sans)">Canary Credentials</text>
 
-          <rect x="610" y="95" width="170" height="50" rx="6" fill="#18222e" stroke="#232f3e" />
-          <text x="695" y="125" text-anchor="middle" font-size="12" fill="#fff" font-family="monospace">Outbound Network</text>
+          <rect x="540" y="80" width="160" height="42" rx="6" fill="#161e2e" stroke="#212c3d" />
+          <text x="620" y="106" text-anchor="middle" font-size="12" fill="#94a3b8" font-family="var(--font-sans)">Network Sockets</text>
         </svg>
       </div>
     </div>
