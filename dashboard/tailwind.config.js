@@ -70,7 +70,8 @@ export default {
           "sans-serif",
         ],
         mono: [
-          '"JetBrains Mono"',
+          '"Maple Mono"',
+          '"Liberation Mono"',
           "ui-monospace",
           "SFMono-Regular",
           "Menlo",

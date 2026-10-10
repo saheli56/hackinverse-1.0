@@ -24,13 +24,6 @@ jobs:
 
       - name: Run behavior.lock Check
         run: |
-          npx behaviorlock check --visual
+          npx behaviorlock check
         env:
           CI: true
-
-      - name: Upload Visual Security Report Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: behavior-security-report
-          path: behavior.html

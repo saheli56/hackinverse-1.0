@@ -28,7 +28,9 @@ export async function runCLI(args = process.argv.slice(2)) {
     silent: parsed.flags.silent || false,
     reason: parsed.flags.reason,
     expires: parsed.flags.expires,
-    visual: parsed.flags.visual ?? true
+    visual: parsed.flags.visual ?? true,
+    port: parsed.flags.port ? parseInt(parsed.flags.port, 10) : undefined,
+    open: parsed.flags.open
   };
 
   switch (parsed.command) {

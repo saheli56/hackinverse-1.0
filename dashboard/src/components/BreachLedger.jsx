@@ -50,7 +50,7 @@ export function BreachLedger({ violations = [], onOpenApproveModal }) {
                 <button
                   key={sev}
                   onClick={() => setSeverityFilter(sev)}
-                  className={`px-3 py-1 rounded-md text-xs font-semibold font-mono transition-all cursor-pointer whitespace-nowrap ${
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     isActive
                       ? "bg-zinc-100 text-zinc-900 shadow-sm"
                       : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60"
@@ -116,7 +116,7 @@ export function BreachLedger({ violations = [], onOpenApproveModal }) {
                       <Badge variant={isCrit ? "critical" : isHigh ? "high" : "medium"}>
                         {v.severity}
                       </Badge>
-                      <span className="font-mono text-xs font-semibold text-zinc-100 tracking-wide">
+                      <span className="text-xs font-semibold text-zinc-100 tracking-wide">
                         {v.type}
                       </span>
                       <span className="text-xs font-mono text-zinc-500">
@@ -124,21 +124,21 @@ export function BreachLedger({ violations = [], onOpenApproveModal }) {
                       </span>
                     </div>
 
-                    <div className="text-xs font-mono text-zinc-400 flex items-center gap-2">
+                    <div className="text-xs text-zinc-400 flex items-center gap-2">
                       <span className="text-zinc-200 font-semibold">{v.package}</span>
                       <span className="text-zinc-500">• phase: {v.phase || "runtime"}</span>
                     </div>
                   </div>
 
                   {/* Target and Message Box */}
-                  <div className="bg-zinc-950 border border-zinc-850 rounded-md p-3 font-mono text-xs space-y-1">
+                  <div className="bg-zinc-950 border border-zinc-850 rounded-md p-3 text-xs space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="text-zinc-500 shrink-0">Syscall Target:</span>
-                      <span className="text-zinc-200 font-semibold select-all break-all">{v.target}</span>
+                      <span className="text-zinc-500 shrink-0 font-medium">Syscall Target:</span>
+                      <span className="font-mono text-zinc-200 font-medium select-all break-all">{v.target}</span>
                     </div>
                     {v.message && (
-                      <div className="flex items-start gap-2 pt-1 border-t border-zinc-900 text-zinc-300">
-                        <span className="text-zinc-500 shrink-0">Anomaly:</span>
+                      <div className="flex items-start gap-2 pt-1.5 border-t border-zinc-900 text-zinc-300">
+                        <span className="text-zinc-500 shrink-0 font-medium">Anomaly:</span>
                         <span>{v.message}</span>
                       </div>
                     )}

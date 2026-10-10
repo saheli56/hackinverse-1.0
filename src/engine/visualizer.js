@@ -385,23 +385,4 @@ export class Visualizer {
     console.log(`\n${ANSI.gold}Next step:${ANSI.reset} Commit ${ANSI.white}${ANSI.bold}behavior.lock${ANSI.reset} to your git repository.`);
     console.log(`Run ${ANSI.sky}behaviorlock check${ANSI.reset} in CI to enforce this contract on every pull request.\n`);
   }
-
-  static generateHtmlReport(diffResult, contract, outputPath) {
-    const targetName = path.basename(path.dirname(outputPath));
-    const distPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dashboard/dist/index.html');
-    const dataJson = JSON.stringify({ diffResult, contract, targetName }).replace(/</g, '\\u003c');
-    const injection = `<script>window.__BEHAVIORLOCK_DATA__ = ${dataJson};</script>`;
-
-    let html;
-    if (fs.existsSync(distPath)) {
-      const template = fs.readFileSync(distPath, 'utf8');
-      html = template.replace('<div id="root"></div>', `<div id="root"></div>\n    ${injection}`);
-    } else {
-      // Lightweight fallback if dashboard has not been built
-      html = `<!DOCTYPE html><html><head><title>behavior.lock</title></head><body><div id="root"></div>${injection}</body></html>`;
-    }
-
-    fs.writeFileSync(outputPath, html, 'utf8');
-    return outputPath;
-  }
 }

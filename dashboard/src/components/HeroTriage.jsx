@@ -48,7 +48,7 @@ export function HeroTriage({ data, onApproveClick }) {
                 )}
                 <span>{passed ? "Contract Satisfied" : "Contract Breach Detected"}</span>
               </Badge>
-              <span className="text-xs text-zinc-500 font-mono">• Target: {targetName}</span>
+              <span className="text-xs text-zinc-500">• Target: {targetName}</span>
             </div>
 
             {/* High-impact Typography */}
@@ -71,15 +71,15 @@ export function HeroTriage({ data, onApproveClick }) {
 
             {/* Engine Metadata Tags */}
             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-zinc-950 border border-zinc-850 font-mono text-[11px]">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-zinc-950 border border-zinc-850 text-[11px]">
                 <Cpu size={12} className="text-zinc-500" />
                 <span>Engine: {sandbox.engine || "runtime-hook (V8)"}</span>
               </div>
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-zinc-950 border border-zinc-850 font-mono text-[11px]">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-zinc-950 border border-zinc-850 text-[11px]">
                 <Terminal size={12} className="text-zinc-500" />
                 <span>Node: {sandbox.node || process.version || "v22"}</span>
               </div>
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-zinc-950 border border-zinc-850 font-mono text-[11px]">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-zinc-950 border border-zinc-850 text-[11px]">
                 <Pulse size={12} className="text-zinc-400" />
                 <span>Isolation: Active</span>
               </div>
@@ -90,16 +90,16 @@ export function HeroTriage({ data, onApproveClick }) {
           <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-3 shrink-0">
             <div className="grid grid-cols-3 gap-2 w-full sm:w-auto">
               <div className="px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800/80 flex flex-col items-center justify-center min-w-[76px]">
-                <span className="text-[10px] font-semibold text-rose-400 uppercase tracking-wider font-mono">Critical</span>
-                <span className="text-xl font-bold text-rose-400 font-mono mt-0.5">{summary.critical}</span>
+                <span className="text-[10px] font-semibold text-rose-400 uppercase tracking-wider">Critical</span>
+                <span className="text-xl font-bold text-rose-400 mt-0.5">{summary.critical}</span>
               </div>
               <div className="px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800/80 flex flex-col items-center justify-center min-w-[76px]">
-                <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider font-mono">High</span>
-                <span className="text-xl font-bold text-amber-400 font-mono mt-0.5">{summary.high}</span>
+                <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">High</span>
+                <span className="text-xl font-bold text-amber-400 mt-0.5">{summary.high}</span>
               </div>
               <div className="px-4 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800/80 flex flex-col items-center justify-center min-w-[76px]">
-                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider font-mono">Medium</span>
-                <span className="text-xl font-bold text-zinc-300 font-mono mt-0.5">{summary.medium}</span>
+                <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Medium</span>
+                <span className="text-xl font-bold text-zinc-300 mt-0.5">{summary.medium}</span>
               </div>
             </div>
 

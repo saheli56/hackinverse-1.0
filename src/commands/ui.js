@@ -28,7 +28,6 @@ export async function commandUi(options = {}) {
     }
   }
 
-  const reportPath = path.join(activeCwd, 'behavior.html');
   const targetName = path.basename(activeCwd);
 
   Visualizer.printBanner();
@@ -36,6 +35,7 @@ export async function commandUi(options = {}) {
   let contract;
   let diffResult;
   let runResult;
+  let differ;
 
   let cmd = 'npm';
   let args = ['test', '--if-present'];
@@ -43,6 +43,9 @@ export async function commandUi(options = {}) {
     const parts = options.cmd.split(' ');
     cmd = parts[0];
     args = parts.slice(1);
+  } else if (fs.existsSync(path.join(activeCwd, 'test.js'))) {
+    cmd = 'node';
+    args = ['test.js'];
   }
   const runner = new Runner({ cwd: activeCwd, engine: options.engine });
 
@@ -50,7 +53,7 @@ export async function commandUi(options = {}) {
     contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
     validateLockfile(contract);
     runResult = runner.runPhase('runtime', cmd, args, { silent: true });
-    const differ = new Differ(contract);
+    differ = new Differ(contract);
     diffResult = differ.diff(runResult.contract);
   } else {
     contract = {
@@ -66,17 +69,6 @@ export async function commandUi(options = {}) {
       violations: [],
       approvedMatches: []
     };
-  }
-
-  // Generate / update standalone offline behavior.html
-  Visualizer.generateHtmlReport(diffResult, contract, reportPath);
-
-  // If running in static mode, open file directly
-  if (options.static) {
-    const url = `file://${reportPath.replace(/\\/g, '/')}`;
-    console.log(`\x1b[38;5;45m◆\x1b[0m \x1b[1mOpened Static Dashboard:\x1b[0m \x1b[36m${url}\x1b[0m\n`);
-    openBrowser(reportPath);
-    return;
   }
 
   // Locate compiled React bundle
@@ -109,14 +101,67 @@ export async function commandUi(options = {}) {
 
     // POST /api/check (Re-run sandbox telemetry check)
     if (url.pathname === '/api/check' && req.method === 'POST') {
-      contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
-      runResult = runner.runPhase('runtime', cmd, args, { silent: true });
-      differ = new Differ(contract);
-      diffResult = differ.diff(runResult.contract);
-      Visualizer.generateHtmlReport(diffResult, contract, reportPath);
+      try {
+        contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
+        runResult = runner.runPhase('runtime', cmd, args, { silent: true });
+        differ = new Differ(contract);
+        diffResult = differ.diff(runResult.contract);
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ diffResult, contract, targetName }));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ diffResult, contract, targetName }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+      return;
+    }
+
+    // POST /api/scenario (Interactive scenario switcher for demo app)
+    if (url.pathname === '/api/scenario' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const { scenario } = JSON.parse(body || '{}');
+          const rootDir = path.resolve(__dirname, '../../');
+          const demoDir = path.resolve(rootDir, 'demo');
+          const targetModule = path.resolve(demoDir, 'demo-app/node_modules/slug-lib/index.js');
+          const safePkg = path.resolve(demoDir, 'packages/safe-slug/index.js');
+          const compromisedPkg = path.resolve(demoDir, 'packages/compromised-slug/index.js');
+          const telemetryPkg = path.resolve(demoDir, 'packages/telemetry-slug/index.js');
+
+          if (fs.existsSync(targetModule)) {
+            // Reset baseline first
+            fs.copyFileSync(safePkg, targetModule);
+            const initRun = runner.runPhase('runtime', cmd, args, { silent: true });
+            const cleanContract = {
+              version: 1,
+              generated: new Date().toISOString().split('T')[0],
+              sandbox: { engine: options.engine || 'runtime-hook (V8)', node: process.version, os: process.platform },
+              packages: initRun.contract,
+              approvals: []
+            };
+            fs.writeFileSync(lockfilePath, stringifyLockfile(cleanContract), 'utf8');
+
+            if (scenario === 'attack') {
+              fs.copyFileSync(compromisedPkg, targetModule);
+            } else if (scenario === 'telemetry') {
+              fs.copyFileSync(telemetryPkg, targetModule);
+            }
+          }
+
+          contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
+          runResult = runner.runPhase('runtime', cmd, args, { silent: true });
+          differ = new Differ(contract);
+          diffResult = differ.diff(runResult.contract);
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ diffResult, contract, targetName, scenario }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+      });
       return;
     }
 
@@ -165,7 +210,6 @@ export async function commandUi(options = {}) {
           // Re-evaluate diff
           differ = new Differ(contract);
           diffResult = differ.diff(runResult.contract);
-          Visualizer.generateHtmlReport(diffResult, contract, reportPath);
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ diffResult, contract, targetName }));
@@ -186,7 +230,7 @@ export async function commandUi(options = {}) {
       if (reactTemplate) {
         html = reactTemplate.replace('<div id="root"></div>', `<div id="root"></div>\n    ${injection}`);
       } else {
-        html = fs.readFileSync(reportPath, 'utf8');
+        html = `<!DOCTYPE html><html><head><title>behavior.lock</title></head><body><div id="root"></div>${injection}</body></html>`;
       }
 
       res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -201,7 +245,6 @@ export async function commandUi(options = {}) {
   server.listen(port, () => {
     const studioUrl = `http://localhost:${port}`;
     console.log(`\x1b[38;5;45m◆\x1b[0m \x1b[1mReact Security Studio:\x1b[0m \x1b[36m${studioUrl}\x1b[0m`);
-    console.log(`\x1b[90mOffline Report:\x1b[0m         \x1b[36mfile://${reportPath.replace(/\\/g, '/')}\x1b[0m\n`);
     console.log(`\x1b[90mPress Ctrl+C to close studio server.\x1b[0m\n`);
 
     if (options.open !== false) {

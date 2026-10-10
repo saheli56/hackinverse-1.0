@@ -74,23 +74,50 @@ export function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isRechecking, setIsRechecking] = useState(false);
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+  const [activeScenario, setActiveScenario] = useState(() => {
+    if (typeof window !== "undefined" && window.__BEHAVIORLOCK_DATA__?.scenario) {
+      return window.__BEHAVIORLOCK_DATA__.scenario;
+    }
+    return "safe";
+  });
+  const [isSwitchingScenario, setIsSwitchingScenario] = useState(false);
 
   // Poll or fetch live API if server is running
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchLiveData() {
       try {
         const res = await fetch("/api/data");
-        if (res.ok) {
+        if (res.ok && isMounted) {
           const json = await res.json();
           if (json && json.diffResult) {
             setData(json);
+            if (json.scenario) setActiveScenario(json.scenario);
           }
         }
       } catch {
         // Standalone file mode
       }
     }
+
     fetchLiveData();
+
+    // Auto-sync every 3s and on window focus
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchLiveData();
+      }
+    }, 3000);
+
+    const onFocus = () => fetchLiveData();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   // Global Ctrl+K shortcut
@@ -118,6 +145,26 @@ export function App() {
       return;
     }
     setIsRechecking(false);
+  };
+
+  const handleSelectScenario = async (scenario) => {
+    setIsSwitchingScenario(true);
+    setActiveScenario(scenario);
+    try {
+      const res = await fetch("/api/scenario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setData(updated);
+      }
+    } catch {
+      // Fallback for static demo
+    } finally {
+      setIsSwitchingScenario(false);
+    }
   };
 
   const handleConfirmApproval = async ({ id, reason, approved_by }) => {
@@ -190,6 +237,9 @@ export function App() {
           onRecheck={handleRecheck}
           isRechecking={isRechecking}
           onOpenSearch={() => setIsSearchOpen(true)}
+          onSelectScenario={handleSelectScenario}
+          activeScenario={activeScenario}
+          isSwitchingScenario={isSwitchingScenario}
         />
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -210,7 +260,7 @@ export function App() {
                   <Stack size={14} weight={activeTab === "ledger" ? "fill" : "regular"} />
                   <span>Incident Ledger</span>
                   {violations.length > 0 && (
-                    <Badge variant="critical" className="ml-1 text-[10px] py-0 px-1.5 font-mono">
+                    <Badge variant="critical" className="ml-1 text-[10px] py-0 px-1.5">
                       {violations.length}
                     </Badge>
                   )}
@@ -246,7 +296,7 @@ export function App() {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-zinc-900 py-6 text-center text-xs text-zinc-600 font-mono">
+        <footer className="border-t border-zinc-900 py-6 text-center text-xs text-zinc-500">
           behavior.lock · Runtime Capability Sandbox · HackInverse 2026
         </footer>
       </div>

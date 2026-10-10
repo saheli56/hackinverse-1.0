@@ -16,7 +16,11 @@
     "test": "node test/suite.js",
     "test:safe": "node demo/test-scenario.js safe",
     "test:attack": "node demo/test-scenario.js attack",
-    "test:telemetry": "node demo/test-scenario.js telemetry"
+    "test:telemetry": "node demo/test-scenario.js telemetry",
+    "reset": "node demo/test-scenario.js reset",
+    "inject:safe": "node demo/test-scenario.js inject safe",
+    "inject:attack": "node demo/test-scenario.js inject attack",
+    "inject:telemetry": "node demo/test-scenario.js inject telemetry"
   },
   "keywords": [
     "security",

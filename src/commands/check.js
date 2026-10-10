@@ -54,15 +54,9 @@ export async function commandCheck(options = {}) {
   const targetName = path.basename(cwd);
   Visualizer.renderTerminalReport(diffResult, targetName);
 
-  // Generate visual HTML report
-  const htmlPath = path.join(cwd, 'behavior.html');
-  Visualizer.generateHtmlReport(diffResult, runResult.contract, htmlPath);
-  console.log(`\x1b[38;5;45m◆\x1b[0m \x1b[90mSecurity Report:\x1b[0m \x1b[36mfile://${htmlPath.replace(/\\/g, '/')}\x1b[0m\n`);
-
   if (options.open) {
-    const platform = process.platform;
-    const opener = platform === 'win32' ? `start "" "${htmlPath}"` : (platform === 'darwin' ? `open "${htmlPath}"` : `xdg-open "${htmlPath}"`);
-    exec(opener, () => {});
+    const { commandUi } = await import('./ui.js');
+    await commandUi({ cwd, engine: options.engine, cmd: options.cmd });
   }
 
   if (!diffResult.passed) {

@@ -27,7 +27,7 @@ export function BentoGrid({ data }) {
       <Card className="flex flex-col justify-between border-zinc-800 bg-zinc-900/40 backdrop-blur-md">
         <CardHeader className="p-5 pb-3">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 font-mono">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
               <Crosshair size={14} className="text-rose-400" />
               <span>Decoy Honeypots</span>
             </span>
@@ -44,9 +44,9 @@ export function BentoGrid({ data }) {
               : "Decoy credentials planted in canary zone. Any unauthorized filesystem read triggers an instant breach alert."}
           </p>
         </CardHeader>
-        <CardFooter className="p-5 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-xs font-mono text-zinc-400">
+        <CardFooter className="p-5 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-xs text-zinc-400">
           <span>Target:</span>
-          <span className="text-zinc-300 truncate max-w-[170px]">[CANARY_ZONE]/.aws</span>
+          <span className="text-zinc-300 truncate max-w-[170px] font-mono text-[11px]">[CANARY_ZONE]/.aws</span>
         </CardFooter>
       </Card>
 
@@ -54,7 +54,7 @@ export function BentoGrid({ data }) {
       <Card className="flex flex-col justify-between border-zinc-800 bg-zinc-900/40 backdrop-blur-md">
         <CardHeader className="p-5 pb-3">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 font-mono">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
               <Globe size={14} className="text-zinc-300" />
               <span>Capability Matrix</span>
             </span>
@@ -67,25 +67,25 @@ export function BentoGrid({ data }) {
               <span className="text-zinc-400 flex items-center gap-1.5">
                 <Globe size={13} className="text-zinc-500" /> Network Sockets
               </span>
-              <span className="font-mono text-zinc-200 text-[11px]">Strict Baseline</span>
+              <span className="text-zinc-200 text-xs font-medium">Strict Baseline</span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-zinc-800/60">
               <span className="text-zinc-400 flex items-center gap-1.5">
                 <TerminalWindow size={13} className="text-zinc-500" /> Child Processes
               </span>
-              <span className="font-mono text-zinc-200 text-[11px]">Blocked by Default</span>
+              <span className="text-zinc-200 text-xs font-medium">Blocked by Default</span>
             </div>
             <div className="flex items-center justify-between py-1">
               <span className="text-zinc-400 flex items-center gap-1.5">
                 <FolderLock size={13} className="text-zinc-500" /> Filesystem Scope
               </span>
-              <span className="font-mono text-zinc-200 text-[11px]">Project Boundaries</span>
+              <span className="text-zinc-200 text-xs font-medium">Project Boundaries</span>
             </div>
           </div>
         </CardHeader>
-        <CardFooter className="p-5 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-xs font-mono text-zinc-400">
+        <CardFooter className="p-5 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-xs text-zinc-400">
           <span>Interceptor:</span>
-          <span className="text-zinc-200">V8 Hook v1.0</span>
+          <span className="text-zinc-200 font-medium">V8 Hook v1.0</span>
         </CardFooter>
       </Card>
 
@@ -93,7 +93,7 @@ export function BentoGrid({ data }) {
       <Card className="flex flex-col justify-between border-zinc-800 bg-zinc-900/40 backdrop-blur-md">
         <CardHeader className="p-5 pb-3">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 font-mono">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
               <Key size={14} className="text-amber-400" />
               <span>Signed Overrides</span>
             </span>
@@ -110,9 +110,9 @@ export function BentoGrid({ data }) {
               : "No unverified overrides. All packages must conform to the committed behavior.lock contract."}
           </p>
         </CardHeader>
-        <CardFooter className="p-5 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-xs font-mono text-zinc-400">
+        <CardFooter className="p-5 pt-3 border-t border-zinc-800/60 flex items-center justify-between text-xs text-zinc-400">
           <span>Integrity:</span>
-          <span className="text-emerald-400 flex items-center gap-1 text-[11px]">
+          <span className="text-emerald-400 flex items-center gap-1 text-[11px] font-medium">
             <CheckCircle size={12} weight="fill" /> SHA-256 Pinned
           </span>
         </CardFooter>

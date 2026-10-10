@@ -10,7 +10,7 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 
-export function Navbar({ data, onRecheck, isRechecking, onOpenSearch }) {
+export function Navbar({ data, onRecheck, isRechecking, onOpenSearch, onSelectScenario, activeScenario, isSwitchingScenario }) {
   const { diffResult = {}, targetName = "app" } = data;
   const passed = diffResult.passed ?? (diffResult.violations?.length === 0);
 
@@ -24,15 +24,57 @@ export function Navbar({ data, onRecheck, isRechecking, onOpenSearch }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-xs tracking-tight text-zinc-100 font-mono">behavior.lock</span>
+              <span className="font-semibold text-xs tracking-tight text-zinc-100">behavior.lock</span>
               <Badge variant="zinc" className="text-[10px] px-1.5 py-0">v1.0</Badge>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono">
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
               <GitBranch size={11} className="text-zinc-500" />
               <span>{targetName}</span>
             </div>
           </div>
         </div>
+
+        {/* Interactive Scenario Switcher */}
+        {onSelectScenario && (
+          <div className="hidden lg:flex items-center bg-zinc-900/90 border border-zinc-800 p-0.5 rounded-lg text-xs">
+            <button
+              onClick={() => onSelectScenario('safe')}
+              disabled={isSwitchingScenario}
+              className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
+                activeScenario === 'safe'
+                  ? 'bg-zinc-800 text-emerald-400 font-medium shadow-sm border border-zinc-700/60'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <ShieldCheck size={13} weight={activeScenario === 'safe' ? 'fill' : 'regular'} />
+              <span>Safe Baseline</span>
+            </button>
+            <button
+              onClick={() => onSelectScenario('attack')}
+              disabled={isSwitchingScenario}
+              className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
+                activeScenario === 'attack'
+                  ? 'bg-rose-950/70 text-rose-400 font-medium shadow-sm border border-rose-900/60'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <WarningOctagon size={13} weight={activeScenario === 'attack' ? 'fill' : 'regular'} />
+              <span>Zero-Day Attack</span>
+            </button>
+            <button
+              onClick={() => onSelectScenario('telemetry')}
+              disabled={isSwitchingScenario}
+              className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 ${
+                activeScenario === 'telemetry'
+                  ? 'bg-amber-950/70 text-amber-400 font-medium shadow-sm border border-amber-900/60'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <ArrowsClockwise size={13} weight={activeScenario === 'telemetry' ? 'fill' : 'regular'} />
+              <span>Telemetry Drift</span>
+            </button>
+          </div>
+        )}
 
         {/* Global Search & Actions */}
         <div className="flex items-center gap-2.5">
@@ -43,7 +85,7 @@ export function Navbar({ data, onRecheck, isRechecking, onOpenSearch }) {
             className="hidden md:flex items-center gap-2 text-zinc-400 hover:text-zinc-100 border-zinc-800 bg-zinc-900/50"
           >
             <MagnifyingGlass size={13} className="text-zinc-500" />
-            <span>Search breaches, syscalls...</span>
+            <span>Search breaches...</span>
             <kbd className="ml-2 font-mono text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 border border-zinc-700">
               Ctrl K
             </kbd>
@@ -71,11 +113,11 @@ export function Navbar({ data, onRecheck, isRechecking, onOpenSearch }) {
               variant="zinc"
               size="sm"
               onClick={onRecheck}
-              disabled={isRechecking}
+              disabled={isRechecking || isSwitchingScenario}
               className="flex items-center gap-1.5 text-zinc-200"
               title="Re-run sandbox capability check"
             >
-              <ArrowsClockwise size={13} className={isRechecking ? "animate-spin" : ""} />
+              <ArrowsClockwise size={13} className={(isRechecking || isSwitchingScenario) ? "animate-spin" : ""} />
               <span className="hidden sm:inline">Verify Sandbox</span>
             </Button>
           )}
