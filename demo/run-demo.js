@@ -21,11 +21,11 @@ const compromisedPkg = path.resolve(__dirname, 'packages/compromised-slug/index.
 const telemetryPkg = path.resolve(__dirname, 'packages/telemetry-slug/index.js');
 
 function banner(title) {
-  console.log(`\n\x1b[1m--- ${title} ---\x1b[0m\n`);
+  console.log(`\n\x1b[38;5;45m\x1b[1m━━━ ${title} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\n`);
 }
 
 function run(cmd, args, cwd = rootDir) {
-  console.log(`\x1b[90m$ ${cmd} ${args.join(' ')}\x1b[0m`);
+  console.log(`\x1b[38;5;242m$ ${cmd} ${args.join(' ')}\x1b[0m`);
   const res = spawnSync(cmd, args, { cwd, stdio: 'inherit' });
   return res.status;
 }
@@ -37,10 +37,10 @@ function sleep(ms) {
 
 async function main() {
   console.clear();
-  console.log(`\x1b[1mbehavior.lock\x1b[0m \x1b[90m· Runtime Security Sandbox Demo\x1b[0m\n`);
+  console.log(`\x1b[38;5;45m\x1b[1m◆ behavior.lock\x1b[0m \x1b[38;5;242m· Runtime Security Sandbox Demo\x1b[0m\n`);
 
   banner('Act 1: Baseline Contract Generation');
-  console.log('\x1b[90mConfiguring demo project with safe-slug v1.0.0...\x1b[0m');
+  console.log('\x1b[38;5;242mConfiguring demo project with safe-slug v1.0.0...\x1b[0m');
   fs.copyFileSync(safePkg, targetModule);
 
   run('node', [cliBin, 'init', '--cwd', demoAppDir, '--cmd', 'node test.js']);
@@ -48,30 +48,30 @@ async function main() {
   sleep(1200);
 
   banner('Act 2: Poisoned Dependency Simulation');
-  console.log('\x1b[90mSimulating dependency update: slug-lib v1.0.0 -> v1.0.2 (compromised)\x1b[0m\n');
+  console.log('\x1b[38;5;242mSimulating dependency update: slug-lib v1.0.0 -> v1.0.2 (compromised)\x1b[0m\n');
   fs.copyFileSync(compromisedPkg, targetModule);
 
-  console.log('\x1b[1m[Standard Unit Test Execution]\x1b[0m');
+  console.log('\x1b[38;5;220m\x1b[1m[Standard CI Unit Test Execution]\x1b[0m');
   run('node', ['test.js'], demoAppDir);
-  console.log('\x1b[90mNote: Functional unit tests pass completely despite malicious background activity.\x1b[0m\n');
+  console.log('\x1b[38;5;242mNotice: Functional tests pass completely despite malicious credential theft.\x1b[0m\n');
 
   sleep(1200);
 
-  console.log('\x1b[1m[behavior.lock Contract Verification]\x1b[0m');
+  console.log('\x1b[38;5;196m\x1b[1m[behavior.lock Sandbox Verification]\x1b[0m');
   run('node', [cliBin, 'check', '--cwd', demoAppDir, '--cmd', 'node test.js']);
 
   sleep(1200);
 
   banner('Act 3: Authorized Dependency Update');
-  console.log('\x1b[90mSimulating legitimate dependency update with documented telemetry endpoint...\x1b[0m\n');
+  console.log('\x1b[38;5;242mSimulating legitimate dependency update with documented telemetry endpoint...\x1b[0m\n');
   fs.copyFileSync(telemetryPkg, targetModule);
 
-  console.log('\x1b[1m[Step 1: Unapproved Verification]\x1b[0m');
+  console.log('\x1b[38;5;214m\x1b[1m[Step 1: Unapproved Verification — Flags Behavioral Drift]\x1b[0m');
   run('node', [cliBin, 'check', '--cwd', demoAppDir, '--cmd', 'node test.js']);
 
   sleep(1000);
 
-  console.log('\x1b[1m[Step 2: Sign Approval into Lockfile]\x1b[0m');
+  console.log('\x1b[38;5;45m\x1b[1m[Step 2: Sign Cryptographic Approval into Lockfile]\x1b[0m');
   run('node', [
     cliBin,
     'approve',
@@ -86,7 +86,7 @@ async function main() {
 
   sleep(1000);
 
-  console.log('\x1b[1m[Step 3: Re-verify Against Updated Contract]\x1b[0m');
+  console.log('\x1b[38;5;48m\x1b[1m[Step 3: Re-verify Against Signed Contract]\x1b[0m');
   run('node', [cliBin, 'check', '--cwd', demoAppDir, '--cmd', 'node test.js']);
 
   sleep(1200);
@@ -103,7 +103,7 @@ async function main() {
 └───────────────────────────────────────┴──────────────┴─────────────────────────┘
 `);
 
-  console.log(`\x1b[90m"Your lockfile pins the code. Ours pins the behavior."\x1b[0m\n`);
+  console.log(`\x1b[38;5;45m\x1b[1mPitch close:\x1b[0m \x1b[38;5;255m"Your lockfile pins the code. Ours pins the behavior."\x1b[0m\n`);
 }
 
 main().catch(console.error);
