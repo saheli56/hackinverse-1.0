@@ -13,8 +13,10 @@ export async function commandInit(options = {}) {
   const cwd = path.resolve(options.cwd || process.cwd());
   const lockfilePath = path.join(cwd, 'behavior.lock');
 
-  Visualizer.printBanner();
-  Visualizer.printSessionContext({ cwd, cmd: options.cmd || 'npm test', engine: options.engine });
+  if (!options.silent) {
+    Visualizer.printBanner();
+    Visualizer.printSessionContext({ cwd, cmd: options.cmd || 'npm test', engine: options.engine });
+  }
 
   const runner = new Runner({ cwd, engine: options.engine });
 
@@ -42,14 +44,16 @@ export async function commandInit(options = {}) {
 
   fs.writeFileSync(lockfilePath, stringifyLockfile(lockfile), 'utf8');
 
-  const pkgCount = Object.keys(lockfile.packages).length;
-  Visualizer.renderInitSuccess(
-    {
-      lockfilePath,
-      packageCount: pkgCount,
-      rawEventsCount: runResult.rawEventsCount,
-      engine: options.engine
-    },
-    lockfile.packages
-  );
+  if (!options.silent) {
+    const pkgCount = Object.keys(lockfile.packages).length;
+    Visualizer.renderInitSuccess(
+      {
+        lockfilePath,
+        packageCount: pkgCount,
+        rawEventsCount: runResult.rawEventsCount,
+        engine: options.engine
+      },
+      lockfile.packages
+    );
+  }
 }
