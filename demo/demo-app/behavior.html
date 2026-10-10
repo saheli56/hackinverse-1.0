@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>behavior.lock Security Report</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --danger: #f85149;
+      --danger-bg: rgba(248, 81, 73, 0.15);
+      --warning: #d29922;
+      --success: #3fb950;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
+    body { background: var(--bg); color: var(--text); padding: 2rem; line-height: 1.5; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    .logo { font-size: 1.6rem; font-weight: 700; color: #fff; }
+    .logo span { color: var(--accent); }
+    .status-badge { padding: 0.4rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem; }
+    .status-badge.failed { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); }
+    .status-badge.passed { background: rgba(63, 185, 80, 0.15); color: var(--success); border: 1px solid var(--success); }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; }
+    .stat-val { font-size: 2rem; font-weight: bold; margin-bottom: 0.2rem; }
+    .stat-label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .section-title { font-size: 1.2rem; margin-bottom: 1rem; color: #fff; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
+    .violation-row { border-left: 4px solid var(--danger); background: rgba(255,255,255,0.02); padding: 1rem; margin-bottom: 1rem; border-radius: 0 6px 6px 0; }
+    .violation-row.HIGH { border-left-color: var(--warning); }
+    .violation-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+    .v-title { font-weight: bold; font-size: 1.05rem; }
+    .v-id { background: #21262d; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; color: var(--accent); }
+    .v-meta { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.4rem; }
+    .v-target { font-family: monospace; background: #000; padding: 0.3rem 0.6rem; border-radius: 4px; display: inline-block; font-size: 0.9rem; color: #ff7b72; }
+    .graph-view { display: flex; align-items: center; justify-content: center; min-height: 220px; background: #000; border-radius: 6px; padding: 1rem; }
+    pre { background: #000; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; color: #7ee787; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">behavior<span>.lock</span> <small style="font-size: 0.9rem; color: var(--text-muted); font-weight: normal;">| Runtime Contract Inspector</small></div>
+      <div class="status-badge passed">
+        ✓ CONTRACT SATISFIED
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" style="color: var(--text);">0</div>
+        <div class="stat-label">Critical Alerts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color: var(--warning);">0</div>
+        <div class="stat-label">High Severity</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color: var(--accent);">0</div>
+        <div class="stat-label">Medium Severity</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color: var(--success);">1</div>
+        <div class="stat-label">Approved Overrides</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Execution Breach Log</h2>
+    <div class="card">
+      <p style="color: var(--success);">No violations found. System executed completely within approved boundaries.</p>
+    </div>
+
+    <h2 class="section-title">Visual Contract Flow</h2>
+    <div class="card">
+      <div class="graph-view">
+        <svg width="100%" height="160" viewBox="0 0 800 160" xmlns="http://www.w3.org/2000/svg">
+          <style>
+            .node { font-size: 12px; fill: #fff; font-family: monospace; }
+            .node-box { rx: 6; }
+            .edge { stroke: #30363d; stroke-width: 2; stroke-dasharray: 4; }
+            .edge-danger { stroke: #f85149; stroke-width: 2.5; }
+          </style>
+          <!-- Nodes -->
+          <rect x="30" y="55" width="140" height="50" fill="#21262d" stroke="#58a6ff" class="node-box" />
+          <text x="100" y="85" text-anchor="middle" class="node">Target Project</text>
+
+          <line x1="170" y1="80" x2="310" y2="80" class="edge" />
+
+          <rect x="310" y="55" width="160" height="50" fill="#21262d" stroke="#d29922" class="node-box" />
+          <text x="390" y="85" text-anchor="middle" class="node">Dependency Runtime</text>
+
+          <line x1="470" y1="80" x2="610" y2="40" class="edge" />
+          <line x1="470" y1="80" x2="610" y2="120" class="edge" />
+
+          <rect x="610" y="15" width="170" height="50" fill="#21262d" stroke="#30363d" class="node-box" />
+          <text x="695" y="45" text-anchor="middle" class="node">Bait Credentials [🚨]</text>
+
+          <rect x="610" y="95" width="170" height="50" fill="#21262d" stroke="#30363d" class="node-box" />
+          <text x="695" y="125" text-anchor="middle" class="node">Outbound Network</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "content-api",
+  "version": "1.0.0",
+  "description": "Demo web service using dependency to generate slugs",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "test": "node test.js",
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "slug-lib": "link:../packages/safe-slug"
+  }
+}

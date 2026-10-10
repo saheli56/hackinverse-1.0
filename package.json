@@ -1,0 +1,26 @@
+{
+  "name": "behaviorlock",
+  "version": "1.0.0",
+  "description": "A lockfile for what your software does. Pins runtime behavior and blocks unauthorized changes.",
+  "type": "module",
+  "main": "src/cli.js",
+  "bin": {
+    "behaviorlock": "./bin/behaviorlock.js"
+  },
+  "scripts": {
+    "start": "node bin/behaviorlock.js",
+    "demo": "node demo/run-demo.js",
+    "test": "node test/suite.js"
+  },
+  "keywords": [
+    "security",
+    "lockfile",
+    "behavior",
+    "supply-chain",
+    "sandbox",
+    "canary",
+    "devops"
+  ],
+  "author": "HackInverse Team",
+  "license": "MIT"
+}

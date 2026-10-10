@@ -1,0 +1,25 @@
+{
+  "approvals": [
+    {
+      "allow": {
+        "network": [
+          "stats.slug-analytics.com:443"
+        ]
+      },
+      "approved_at": "2026-10-10",
+      "approved_by": "sahel",
+      "expires": null,
+      "id": "4163",
+      "package": "slug-lib",
+      "reason": "Vendor analytics documented and reviewed by Dev Lead"
+    }
+  ],
+  "generated": "2026-10-10",
+  "packages": {},
+  "sandbox": {
+    "engine": "runtime-hook",
+    "node": "v22.14.0",
+    "os": "win32"
+  },
+  "version": 1
+}
