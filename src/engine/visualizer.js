@@ -5,6 +5,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ANSI = {
   reset: '\x1b[0m',
@@ -386,205 +387,19 @@ export class Visualizer {
   }
 
   static generateHtmlReport(diffResult, contract, outputPath) {
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>behavior.lock Security Report</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #07090e;
-      --card: #0f141f;
-      --card-alt: #141c2c;
-      --border: #1e293b;
-      --border-light: #334155;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-glow: rgba(56, 189, 248, 0.15);
-      --danger: #f43f5e;
-      --danger-bg: rgba(244, 63, 94, 0.1);
-      --warning: #fbbf24;
-      --warning-bg: rgba(251, 191, 36, 0.1);
-      --success: #10b981;
-      --success-bg: rgba(16, 185, 129, 0.1);
-      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    const targetName = path.basename(path.dirname(outputPath));
+    const distPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dashboard/dist/index.html');
+    const dataJson = JSON.stringify({ diffResult, contract, targetName }).replace(/</g, '\\u003c');
+    const injection = `<script>window.__BEHAVIORLOCK_DATA__ = ${dataJson};</script>`;
+
+    let html;
+    if (fs.existsSync(distPath)) {
+      const template = fs.readFileSync(distPath, 'utf8');
+      html = template.replace('<div id="root"></div>', `<div id="root"></div>\n    ${injection}`);
+    } else {
+      // Lightweight fallback if dashboard has not been built
+      html = `<!DOCTYPE html><html><head><title>behavior.lock</title></head><body><div id="root"></div>${injection}</body></html>`;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-sans); }
-    body { background: var(--bg); color: var(--text); padding: 3rem 1.5rem; line-height: 1.6; }
-    .container { max-width: 1080px; margin: 0 auto; }
-    
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1.75rem; margin-bottom: 2.25rem; }
-    .brand { display: flex; align-items: center; gap: 0.75rem; }
-    .brand-logo { font-size: 1.5rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; display: flex; align-items: center; gap: 0.5rem; }
-    .brand-logo span { color: var(--accent); }
-    .brand-subtitle { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
-
-    .status-badge { padding: 0.5rem 1.1rem; border-radius: 9999px; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem; }
-    .status-badge.failed { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(244, 63, 94, 0.3); box-shadow: 0 0 20px rgba(244, 63, 94, 0.15); }
-    .status-badge.passed { background: var(--success-bg); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); box-shadow: 0 0 20px rgba(16, 185, 129, 0.15); }
-
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 2.5rem; }
-    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.35rem; position: relative; overflow: hidden; }
-    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--border-light), transparent); }
-    .stat-val { font-size: 2rem; font-weight: 800; margin-bottom: 0.2rem; font-family: var(--font-mono); }
-    .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
-
-    .section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: #fff; display: flex; align-items: center; gap: 0.5rem; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; }
-    
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    th { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-    td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(255,255,255,0.015); }
-    
-    code { font-family: var(--font-mono); font-size: 0.825rem; background: rgba(0,0,0,0.4); padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid var(--border); color: #f1f5f9; }
-    .tag-id { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); background: var(--accent-glow); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.2); }
-
-    .violation-card { border: 1px solid var(--border); background: var(--card-alt); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; position: relative; }
-    .violation-card.CRITICAL { border-left: 4px solid var(--danger); }
-    .violation-card.HIGH { border-left: 4px solid var(--warning); }
-    .violation-card.MEDIUM { border-left: 4px solid var(--accent); }
-    .violation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
-    .v-type { font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-    .v-meta { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.6rem; }
-    .v-msg { font-size: 0.925rem; color: #f1f5f9; margin-bottom: 0.4rem; }
-    .v-remedy { font-size: 0.825rem; color: var(--text-muted); }
-
-    .graph-view { display: flex; align-items: center; justify-content: center; min-height: 180px; background: #05070a; border-radius: 10px; padding: 1.5rem; border: 1px solid var(--border); }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="brand">
-        <div>
-          <div class="brand-logo">🔒 behavior<span>.lock</span></div>
-          <div class="brand-subtitle">Runtime Capability Security & Deception Engine</div>
-        </div>
-      </div>
-      <div class="status-badge ${diffResult.passed ? 'passed' : 'failed'}">
-        ${diffResult.passed ? '● Contract Verified' : '▲ Breach Detected'}
-      </div>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-val" style="color: ${diffResult.summary.critical > 0 ? 'var(--danger)' : 'var(--text)'};">${diffResult.summary.critical}</div>
-        <div class="stat-label">Critical Breaches</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" style="color: var(--warning);">${diffResult.summary.high}</div>
-        <div class="stat-label">High Severity</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" style="color: var(--accent);">${diffResult.summary.medium}</div>
-        <div class="stat-label">Medium Severity</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" style="color: var(--success);">${diffResult.approvedMatches?.length || 0}</div>
-        <div class="stat-label">Signed Overrides</div>
-      </div>
-    </div>
-
-    <h2 class="section-title">📊 Signals Overview</h2>
-    <div class="card">
-      ${
-        diffResult.violations.length === 0
-          ? '<p style="color: var(--success); font-weight: 500;">✔ Zero unauthorized activities detected. All operations conform to committed policies.</p>'
-          : `
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Severity</th>
-                <th>Package</th>
-                <th>Syscall / Target</th>
-                <th>Threat Category</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${diffResult.violations
-                .map(
-                  (v) => `
-                <tr>
-                  <td><span class="tag-id">${v.id}</span></td>
-                  <td><span style="font-weight: 700; color: ${v.severity === 'CRITICAL' ? 'var(--danger)' : v.severity === 'HIGH' ? 'var(--warning)' : 'var(--accent)'}">${v.severity}</span></td>
-                  <td><b>${v.package}</b></td>
-                  <td><code>${v.target}</code></td>
-                  <td>${v.type}</td>
-                </tr>
-              `
-                )
-                .join('')}
-            </tbody>
-          </table>
-          `
-      }
-    </div>
-
-    <h2 class="section-title">🚨 Threat Inspection Log</h2>
-    <div class="card">
-      ${
-        diffResult.violations.length === 0
-          ? '<p style="color: var(--text-muted); font-size: 0.875rem;">No security threats detected.</p>'
-          : diffResult.violations
-              .map(
-                (v) => `
-        <div class="violation-card ${v.severity}">
-          <div class="violation-header">
-            <div class="v-type">${v.type}</div>
-            <div class="tag-id">id: ${v.id}</div>
-          </div>
-          <div class="v-meta">Package: <b>${v.package}</b> &bull; Phase: <b>${v.phase}</b></div>
-          <div style="margin-bottom: 0.6rem;"><code>${v.target}</code></div>
-          <div class="v-msg">${v.message}</div>
-          <div class="v-remedy"><b>Remediation:</b> ${v.remediation}</div>
-        </div>
-      `
-              )
-              .join('')
-      }
-    </div>
-
-    <h2 class="section-title">🗺️ Execution Topology</h2>
-    <div class="card">
-      <div class="graph-view">
-        <svg width="100%" height="150" viewBox="0 0 740 150" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.6"/>
-              <stop offset="100%" stop-color="#818cf8" stop-opacity="0.6"/>
-            </linearGradient>
-          </defs>
-          <rect x="20" y="50" width="130" height="48" rx="8" fill="#141c2c" stroke="#334155" />
-          <text x="85" y="79" text-anchor="middle" font-size="12" font-weight="600" fill="#f8fafc" font-family="var(--font-sans)">Target Project</text>
-
-          <line x1="150" y1="74" x2="270" y2="74" stroke="url(#lineGrad)" stroke-width="2" stroke-dasharray="4" />
-
-          <rect x="270" y="50" width="150" height="48" rx="8" fill="#141c2c" stroke="#334155" />
-          <text x="345" y="79" text-anchor="middle" font-size="12" font-weight="600" fill="#f8fafc" font-family="var(--font-sans)">Dependencies</text>
-
-          <line x1="420" y1="74" x2="540" y2="40" stroke="${diffResult.summary.critical > 0 ? '#f43f5e' : '#334155'}" stroke-width="2" />
-          <line x1="420" y1="74" x2="540" y2="108" stroke="${diffResult.summary.high > 0 ? '#fbbf24' : '#334155'}" stroke-width="2" />
-
-          <rect x="540" y="16" width="160" height="44" rx="8" fill="${diffResult.summary.critical > 0 ? 'rgba(244, 63, 94, 0.15)' : '#141c2c'}" stroke="${diffResult.summary.critical > 0 ? '#f43f5e' : '#334155'}" />
-          <text x="620" y="43" text-anchor="middle" font-size="12" font-weight="600" fill="${diffResult.summary.critical > 0 ? '#f43f5e' : '#94a3b8'}" font-family="var(--font-sans)">Canary Credentials</text>
-
-          <rect x="540" y="86" width="160" height="44" rx="8" fill="${diffResult.summary.high > 0 ? 'rgba(251, 191, 36, 0.15)' : '#141c2c'}" stroke="${diffResult.summary.high > 0 ? '#fbbf24' : '#334155'}" />
-          <text x="620" y="113" text-anchor="middle" font-size="12" font-weight="600" fill="${diffResult.summary.high > 0 ? '#fbbf24' : '#94a3b8'}" font-family="var(--font-sans)">Network Sockets</text>
-        </svg>
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
 
     fs.writeFileSync(outputPath, html, 'utf8');
     return outputPath;

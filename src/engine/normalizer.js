@@ -8,6 +8,7 @@ import os from 'node:os';
 
 export class Normalizer {
   constructor(options = {}) {
+    this.rawProjectDir = options.projectDir ? options.projectDir.replace(/\\/g, '/') : '';
     this.projectDir = path.resolve(options.projectDir || process.cwd());
     this.homeDir = os.homedir();
     this.tmpDir = os.tmpdir();
@@ -35,6 +36,10 @@ export class Normalizer {
     const normProj = this.projectDir.replace(/\\/g, '/');
     if (p.startsWith(normProj)) {
       const rel = p.slice(normProj.length).replace(/^\//, '');
+      return `[PROJECT]/${rel}`;
+    }
+    if (this.rawProjectDir && p.startsWith(this.rawProjectDir)) {
+      const rel = p.slice(this.rawProjectDir.length).replace(/^\//, '');
       return `[PROJECT]/${rel}`;
     }
 

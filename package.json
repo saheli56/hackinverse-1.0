@@ -9,6 +9,9 @@
   },
   "scripts": {
     "start": "node bin/behaviorlock.js",
+    "ui": "node bin/behaviorlock.js ui",
+    "dashboard": "node bin/behaviorlock.js ui",
+    "build:ui": "npm --prefix dashboard run build",
     "demo": "node demo/run-demo.js",
     "test": "node test/suite.js",
     "test:safe": "node demo/test-scenario.js safe",

@@ -6,6 +6,7 @@ import { commandInit } from './commands/init.js';
 import { commandCheck } from './commands/check.js';
 import { commandApprove } from './commands/approve.js';
 import { commandDiff } from './commands/diff.js';
+import { commandUi } from './commands/ui.js';
 
 export async function runCLI(args = process.argv.slice(2)) {
   const parsed = parseArgs(args);
@@ -42,6 +43,10 @@ export async function runCLI(args = process.argv.slice(2)) {
       break;
     case 'diff':
       await commandDiff(options);
+      break;
+    case 'ui':
+    case 'dashboard':
+      await commandUi(options);
       break;
     default:
       console.error(`\x1b[31m\x1b[1mUnknown command:\x1b[0m ${parsed.command}\n`);
@@ -96,6 +101,7 @@ function printHelp() {
   check           Verify execution against behavior.lock (fails CI on breach)
   approve <id>    Sign an approved behavioral change with an audit reason
   diff            Inspect behavioral drift without blocking
+  ui              Open interactive React Security Dashboard in browser
 
 \x1b[1mFLAGS:\x1b[0m
   --cwd <path>          Target directory \x1b[90m(default: .)\x1b[0m
@@ -103,6 +109,7 @@ function printHelp() {
   --engine <name>       Sandbox engine: \x1b[90m'runtime-hook' or 'kernel-strace'\x1b[0m
   --reason "<text>"     Audit justification required for approve
   --expires "<date>"    Optional expiration date \x1b[90m(e.g. 2027-01-01)\x1b[0m
+  --open                Open the React Security Report in browser automatically
   --silent              Suppress target stdout during tracing
   -v, --version         Show version
   -h, --help            Show help

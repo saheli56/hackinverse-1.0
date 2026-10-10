@@ -5,6 +5,7 @@
 
 import path from 'node:path';
 import fs from 'node:fs';
+import { exec } from 'node:child_process';
 import { Runner } from '../engine/runner.js';
 import { Differ } from '../engine/differ.js';
 import { validateLockfile } from '../types/schema.js';
@@ -56,7 +57,13 @@ export async function commandCheck(options = {}) {
   // Generate visual HTML report
   const htmlPath = path.join(cwd, 'behavior.html');
   Visualizer.generateHtmlReport(diffResult, runResult.contract, htmlPath);
-  console.log(`\x1b[90m📊 Interactive report:\x1b[0m \x1b[36mfile://${htmlPath.replace(/\\/g, '/')}\x1b[0m\n`);
+  console.log(`\x1b[38;5;45m◆\x1b[0m \x1b[90mSecurity Report:\x1b[0m \x1b[36mfile://${htmlPath.replace(/\\/g, '/')}\x1b[0m\n`);
+
+  if (options.open) {
+    const platform = process.platform;
+    const opener = platform === 'win32' ? `start "" "${htmlPath}"` : (platform === 'darwin' ? `open "${htmlPath}"` : `xdg-open "${htmlPath}"`);
+    exec(opener, () => {});
+  }
 
   if (!diffResult.passed) {
     process.exitCode = 1;
