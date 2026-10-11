@@ -62,7 +62,7 @@ function mockApiPlugin() {
   };
 
   const mockState = {
-    scenario: 'attack',
+    scenario: 'safe',
     targetName: 'demo-app',
     contract: {
       version: 1,
@@ -71,14 +71,14 @@ function mockApiPlugin() {
       packages: {
         'slug-lib': {
           runtime: {
-            network: ['stats.slug-analytics.com:443'],
-            fs_read: ['[CANARY_ZONE]/.aws/credentials']
+            network: [],
+            fs_read: []
           }
         }
       },
       approvals: []
     },
-    diffResult: getScenarioData('attack')
+    diffResult: getScenarioData('safe')
   };
 
   return {

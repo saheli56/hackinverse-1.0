@@ -1,31 +1,11 @@
 {
   "approvals": [],
-  "generated": "2026-10-10",
-  "packages": {
-    "[project]": {
-      "install": {
-        "exec": [],
-        "fs_read": [],
-        "fs_write": [],
-        "network": []
-      },
-      "runtime": {
-        "exec": [],
-        "fs_read": [
-          "file:///home/masum/Repos%20(Arch)/hackinverse-1.0/demo/demo-app/app.js",
-          "file:///home/masum/Repos%20(Arch)/hackinverse-1.0/demo/demo-app/node_modules/slug-lib/index.js",
-          "file:///home/masum/Repos%20(Arch)/hackinverse-1.0/demo/demo-app/test.js"
-        ],
-        "fs_write": [],
-        "network": []
-      },
-      "secrets": "none"
-    }
-  },
+  "generated": "2026-10-11",
+  "packages": {},
   "sandbox": {
     "engine": "runtime-hook",
-    "node": "v26.11.1",
-    "os": "linux"
+    "node": "v22.14.0",
+    "os": "win32"
   },
   "version": 1
 }

@@ -15,30 +15,9 @@ import { Stack, GitFork, FileCode, BookOpen, MagnifyingGlassPlus, MagnifyingGlas
 // Fallback initial state if static or running standalone
 const DEFAULT_DATA = {
   diffResult: {
-    passed: false,
-    summary: { critical: 1, high: 1, medium: 0, total: 2 },
-    violations: [
-      {
-        id: "5826",
-        type: "SECRET_CANARY_TRIPWIRE",
-        severity: "CRITICAL",
-        package: "slug-lib",
-        phase: "runtime",
-        target: "[CANARY_ZONE]/.aws/credentials",
-        message: "Decoy credential read intercepted: attempted read of canary file",
-        remediation: "Supply chain compromise suspected. Reject this package version."
-      },
-      {
-        id: "4163",
-        type: "NETWORK_ANOMALY",
-        severity: "HIGH",
-        package: "slug-lib",
-        phase: "runtime",
-        target: "stats.slug-analytics.com:443",
-        message: "New outbound connection to stats.slug-analytics.com:443 during runtime phase",
-        remediation: "Review network endpoint. Run behaviorlock approve 4163 if intended."
-      }
-    ],
+    passed: true,
+    summary: { critical: 0, high: 0, medium: 0, total: 0 },
+    violations: [],
     approvedMatches: []
   },
   contract: {
@@ -52,13 +31,14 @@ const DEFAULT_DATA = {
     packages: {
       "slug-lib": {
         runtime: {
-          network: ["stats.slug-analytics.com:443"]
+          network: []
         }
       }
     },
     approvals: []
   },
-  targetName: "demo-app"
+  targetName: "demo-app",
+  scenario: "safe"
 };
 
 export function App() {
