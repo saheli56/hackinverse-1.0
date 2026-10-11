@@ -1,8 +1,57 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { viteSingleFile } from 'vite-plugin-singlefile';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-function mockApiPlugin() {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function dynamicDiskApiPlugin() {
+  const rootDir = path.resolve(__dirname, '..');
+  const demoDir = path.resolve(rootDir, 'demo');
+  const targetModule = path.resolve(demoDir, 'demo-app/node_modules/slug-lib/index.js');
+  const lockfilePath = path.resolve(demoDir, 'demo-app/behavior.lock');
+  const safePkg = path.resolve(demoDir, 'packages/safe-slug/index.js');
+  const compromisedPkg = path.resolve(demoDir, 'packages/compromised-slug/index.js');
+  const telemetryPkg = path.resolve(demoDir, 'packages/telemetry-slug/index.js');
+
+  const getScenarioFromDisk = () => {
+    let scenario = 'safe';
+    let content = '';
+
+    try {
+      if (fs.existsSync(targetModule)) {
+        content = fs.readFileSync(targetModule, 'utf8');
+      }
+    } catch {
+      // ignore
+    }
+
+    if (content.includes('203.0.113.9')) {
+      scenario = 'attack';
+    } else if (content.includes('stats.slug-analytics.com')) {
+      scenario = 'telemetry';
+      // Check if approved in lockfile
+      try {
+        if (fs.existsSync(lockfilePath)) {
+          const lock = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
+          const isApproved = lock.approvals?.some(a => 
+            a.package === 'slug-lib' && a.allow?.network?.includes('stats.slug-analytics.com:443')
+          );
+          if (isApproved) {
+            scenario = 'safe';
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    return scenario;
+  };
+
   const getScenarioData = (sc) => {
     if (sc === 'safe') {
       return {
@@ -61,28 +110,42 @@ function mockApiPlugin() {
     };
   };
 
-  const mockState = {
-    scenario: 'safe',
-    targetName: 'demo-app',
-    contract: {
+  const buildCurrentState = (forcedScenario) => {
+    const sc = forcedScenario || getScenarioFromDisk();
+    let contract = {
       version: 1,
       generated: new Date().toISOString().split('T')[0],
-      sandbox: { engine: 'runtime-hook (V8)', node: 'v22.0.0', os: 'linux' },
+      sandbox: { engine: 'runtime-hook (V8)', node: process.version, os: process.platform },
       packages: {
         'slug-lib': {
           runtime: {
-            network: [],
-            fs_read: []
+            network: sc === 'telemetry' ? ['stats.slug-analytics.com:443'] : [],
+            fs_read: sc === 'attack' ? ['[CANARY_ZONE]/.aws/credentials'] : []
           }
         }
       },
       approvals: []
-    },
-    diffResult: getScenarioData('safe')
+    };
+
+    try {
+      if (fs.existsSync(lockfilePath)) {
+        const diskLock = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
+        if (diskLock.approvals) contract.approvals = diskLock.approvals;
+      }
+    } catch {
+      // ignore
+    }
+
+    return {
+      scenario: sc,
+      targetName: 'demo-app',
+      contract,
+      diffResult: getScenarioData(sc)
+    };
   };
 
   return {
-    name: 'mock-behaviorlock-api',
+    name: 'dynamic-disk-behaviorlock-api',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         if (!req.url.startsWith('/api')) return next();
@@ -90,12 +153,12 @@ function mockApiPlugin() {
         res.setHeader('Content-Type', 'application/json');
 
         if (req.url === '/api/data' && req.method === 'GET') {
-          res.end(JSON.stringify(mockState));
+          res.end(JSON.stringify(buildCurrentState()));
           return;
         }
 
         if (req.url === '/api/check' && req.method === 'POST') {
-          res.end(JSON.stringify(mockState));
+          res.end(JSON.stringify(buildCurrentState()));
           return;
         }
 
@@ -105,9 +168,19 @@ function mockApiPlugin() {
           req.on('end', () => {
             try {
               const { scenario } = JSON.parse(body || '{}');
-              mockState.scenario = scenario;
-              mockState.diffResult = getScenarioData(scenario);
-              res.end(JSON.stringify(mockState));
+
+              // Write to disk so CLI and other tools stay in sync
+              if (fs.existsSync(targetModule)) {
+                if (scenario === 'safe') {
+                  fs.copyFileSync(safePkg, targetModule);
+                } else if (scenario === 'attack') {
+                  fs.copyFileSync(compromisedPkg, targetModule);
+                } else if (scenario === 'telemetry') {
+                  fs.copyFileSync(telemetryPkg, targetModule);
+                }
+              }
+
+              res.end(JSON.stringify(buildCurrentState(scenario)));
             } catch {
               res.statusCode = 400;
               res.end(JSON.stringify({ error: 'Invalid JSON' }));
@@ -122,22 +195,33 @@ function mockApiPlugin() {
           req.on('end', () => {
             try {
               const { id, reason, approved_by } = JSON.parse(body || '{}');
-              const remaining = mockState.diffResult.violations.filter((v) => v.id !== id);
-              mockState.diffResult.violations = remaining;
-              mockState.diffResult.passed = remaining.length === 0;
-              mockState.diffResult.summary = {
-                critical: remaining.filter((v) => v.severity === 'CRITICAL').length,
-                high: remaining.filter((v) => v.severity === 'HIGH').length,
-                medium: remaining.filter((v) => v.severity === 'MEDIUM').length,
-                total: remaining.length
-              };
-              mockState.contract.approvals.push({
+              const state = buildCurrentState();
+              
+              state.contract.approvals.push({
                 id,
-                reason,
-                approved_by,
+                package: 'slug-lib',
+                allow: { network: ['stats.slug-analytics.com:443'] },
+                reason: reason || 'Approved via Dev Studio',
+                approved_by: approved_by || 'developer',
                 approved_at: new Date().toISOString().split('T')[0]
               });
-              res.end(JSON.stringify(mockState));
+
+              // Write approval to disk lockfile
+              if (fs.existsSync(lockfilePath)) {
+                try {
+                  const lock = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
+                  lock.approvals = lock.approvals || [];
+                  lock.approvals.push(state.contract.approvals[state.contract.approvals.length - 1]);
+                  fs.writeFileSync(lockfilePath, JSON.stringify(lock, null, 2) + '\n', 'utf8');
+                } catch {
+                  // ignore
+                }
+              }
+
+              // Rebuild clean state with approval applied
+              const updated = buildCurrentState('safe');
+              updated.contract = state.contract;
+              res.end(JSON.stringify(updated));
             } catch {
               res.statusCode = 400;
               res.end(JSON.stringify({ error: 'Invalid JSON' }));
@@ -153,7 +237,7 @@ function mockApiPlugin() {
 }
 
 export default defineConfig({
-  plugins: [react(), viteSingleFile(), mockApiPlugin()],
+  plugins: [react(), viteSingleFile(), dynamicDiskApiPlugin()],
   build: {
     target: 'esnext',
     assetsInlineLimit: 100000000,
