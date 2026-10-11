@@ -94,13 +94,15 @@ export function Navbar({
             </div>
           )}
 
-          {/* Status Indicator */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-sans h-8">
-            <span className={`w-2 h-2 rounded-full ${passed ? "bg-emerald-500" : "bg-rose-500 animate-pulse"}`} />
-            <span className={`font-semibold text-[11px] ${passed ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-              {passed ? "Sealed" : `${violationCount} Breach${violationCount > 1 ? "es" : ""}`}
-            </span>
-          </div>
+          {/* Breach Alert Pill (Only shown when active security violations exist) */}
+          {!passed && violationCount > 0 && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-xs font-sans h-8">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              <span className="font-semibold text-[11px] text-rose-600 dark:text-rose-400">
+                {violationCount} Breach{violationCount > 1 ? "es" : ""}
+              </span>
+            </div>
+          )}
 
           {/* Re-verify Sandbox Button */}
           {onRecheck && (
