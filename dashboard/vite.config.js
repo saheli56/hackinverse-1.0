@@ -234,24 +234,59 @@ function dynamicDiskApiPlugin() {
         if (req.url === '/api/parallel' && req.method === 'POST') {
           let body = '';
           req.on('data', (c) => { body += c; });
-          req.on('end', () => {
+          req.on('end', async () => {
             try {
-              const { count = 3, env = 'non-prod' } = JSON.parse(body || '{}');
-              const workerCount = Math.max(1, Math.min(8, parseInt(count, 10) || 3));
-              const workers = Array.from({ length: workerCount }, (_, i) => ({
-                workerId: `ci-worker-${i + 1}`,
-                code: 0,
-                duration: 140 + Math.floor(Math.random() * 25),
-                passed: true,
-                env,
-                canaryDir: `behaviorlock-canary-ci-worker-${i + 1}`,
-                traceFile: `trace-ci-worker-${i + 1}.jsonl`
+              const { count = 3, env = 'non-prod', tasks = [] } = JSON.parse(body || '{}');
+              const binPath = path.resolve(rootDir, 'bin/behaviorlock.js');
+              const activeCwd = path.resolve(rootDir, 'demo/demo-app');
+              const workerList = tasks.length > 0
+                ? tasks
+                : Array.from({ length: Math.max(1, Math.min(8, parseInt(count, 10) || 3)) }, (_, i) => ({
+                    id: `ci-worker-${i + 1}`,
+                    cmd: 'npm test'
+                  }));
+
+              const startTime = Date.now();
+              const workers = await Promise.all(workerList.map((task, idx) => {
+                const workerId = task.id || `ci-worker-${idx + 1}`;
+                const workerCmd = task.cmd || 'npm test';
+                return new Promise((resolve) => {
+                  const started = Date.now();
+                  const child = spawn(process.execPath, [
+                    binPath,
+                    'check',
+                    '--cwd', activeCwd,
+                    '--env', env,
+                    '--instance', workerId,
+                    '--cmd', workerCmd,
+                    '--silent'
+                  ], {
+                    cwd: activeCwd,
+                    stdio: ['ignore', 'pipe', 'pipe']
+                  });
+
+                  child.on('close', (code) => {
+                    const duration = Date.now() - started;
+                    resolve({
+                      workerId,
+                      cmd: workerCmd,
+                      code,
+                      duration,
+                      passed: code === 0,
+                      env,
+                      canaryDir: `behaviorlock-canary-${workerId}`,
+                      traceFile: `trace-${workerId}.jsonl`
+                    });
+                  });
+                });
               }));
-              const totalDuration = 165 + Math.floor(Math.random() * 20);
+
+              const totalDuration = Date.now() - startTime;
+              const allPassed = workers.every((w) => w.passed);
               res.end(JSON.stringify({
-                allPassed: true,
+                allPassed,
                 totalDuration,
-                workerCount,
+                workerCount: workers.length,
                 env,
                 workers
               }));
