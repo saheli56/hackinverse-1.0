@@ -81,11 +81,44 @@ export async function commandCheck(options = {}) {
     const totalDuration = Date.now() - startTime;
     const allPassed = results.every(r => r.passed);
 
+    // Persist parallel run snapshot so Web Dashboard displays real CLI run results
+    try {
+      const stateDir = path.join(cwd, '.behaviorlock');
+      if (!fs.existsSync(stateDir)) {
+        fs.mkdirSync(stateDir, { recursive: true });
+      }
+      const parallelPayload = {
+        allPassed,
+        totalDuration,
+        workerCount: results.length,
+        env,
+        timestamp: new Date().toISOString(),
+        workers: results.map(r => ({
+          workerId: r.workerId,
+          cmd: r.cmd,
+          code: r.code,
+          duration: r.duration,
+          passed: r.passed,
+          env,
+          canaryDir: `behaviorlock-canary-${r.workerId}`,
+          traceFile: `trace-${r.workerId}.jsonl`
+        }))
+      };
+      fs.writeFileSync(path.join(stateDir, 'parallel-last.json'), JSON.stringify(parallelPayload, null, 2), 'utf8');
+    } catch {
+      // non-fatal
+    }
+
     console.log(`\n\x1b[32m\x1b[1m✔ Parallel Execution Verified!\x1b[0m`);
     console.log(`  • Total Wall Time:     \x1b[36m${totalDuration}ms\x1b[0m (All ${parallelCount} workers ran concurrently)`);
     console.log(`  • Worker Collision:    \x1b[32mZero race conditions\x1b[0m (Canary tokens & trace files isolated)`);
     console.log(`  • Profile:             \x1b[35m${env.toUpperCase()}\x1b[0m`);
     console.log(`  • CI Status:           ${allPassed ? '\x1b[32mALL CHECKS PASSED\x1b[0m' : '\x1b[31mCHECK FAILED\x1b[0m'}\n`);
+
+    if (options.open) {
+      const { commandUi } = await import('./ui.js');
+      await commandUi({ cwd, engine: options.engine, cmd: options.cmd });
+    }
 
     if (!allPassed) {
       process.exitCode = 1;

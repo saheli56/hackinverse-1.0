@@ -112,6 +112,22 @@ export async function commandUi(options = {}) {
       return;
     }
 
+    // GET /api/parallel (Fetch last parallel CLI or Dashboard run results)
+    if (url.pathname === '/api/parallel' && req.method === 'GET') {
+      try {
+        const lastRunFile = path.join(activeCwd, '.behaviorlock', 'parallel-last.json');
+        if (fs.existsSync(lastRunFile)) {
+          const content = JSON.parse(fs.readFileSync(lastRunFile, 'utf8'));
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(content));
+          return;
+        }
+      } catch {}
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ workers: null }));
+      return;
+    }
+
     // POST /api/parallel (Run parallel sandboxed workers concurrently)
     if (url.pathname === '/api/parallel' && req.method === 'POST') {
       let body = '';
@@ -165,15 +181,24 @@ export async function commandUi(options = {}) {
 
           const totalDuration = Date.now() - startTime;
           const allPassed = workers.every(r => r.passed);
-
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
+          const parallelPayload = {
             allPassed,
             totalDuration,
             workerCount: workers.length,
             env: targetEnv,
+            timestamp: new Date().toISOString(),
             workers
-          }));
+          };
+
+          // Cache to disk
+          try {
+            const stateDir = path.join(activeCwd, '.behaviorlock');
+            if (!fs.existsSync(stateDir)) fs.mkdirSync(stateDir, { recursive: true });
+            fs.writeFileSync(path.join(stateDir, 'parallel-last.json'), JSON.stringify(parallelPayload, null, 2), 'utf8');
+          } catch {}
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(parallelPayload));
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err.message }));

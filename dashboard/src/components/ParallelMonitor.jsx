@@ -33,6 +33,27 @@ export function ParallelMonitor({ currentEnv = "non-prod" }) {
   const [parallelResult, setParallelResult] = useState(null);
   const [showConfig, setShowConfig] = useState(true);
 
+  // Auto-fetch latest CLI parallel run results on mount
+  React.useEffect(() => {
+    let isMounted = true;
+    fetch("/api/parallel")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!isMounted || !data || !data.workers || data.workers.length === 0) return;
+        setParallelResult(data);
+        if (data.env) setTargetEnv(data.env);
+        // Sync worker list with what was executed by CLI
+        const mappedWorkers = data.workers.map(w => ({
+          id: w.workerId,
+          cmd: w.cmd || "npm test",
+          role: "Parallel Worker"
+        }));
+        setWorkers(mappedWorkers);
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
+
   // New worker draft state
   const [newWorkerId, setNewWorkerId] = useState("");
   const [newWorkerCmd, setNewWorkerCmd] = useState("npm test");

@@ -231,6 +231,19 @@ function dynamicDiskApiPlugin() {
           return;
         }
 
+        if (req.url === '/api/parallel' && req.method === 'GET') {
+          try {
+            const lastRunFile = path.resolve(rootDir, 'demo/demo-app/.behaviorlock/parallel-last.json');
+            if (fs.existsSync(lastRunFile)) {
+              const content = JSON.parse(fs.readFileSync(lastRunFile, 'utf8'));
+              res.end(JSON.stringify(content));
+              return;
+            }
+          } catch {}
+          res.end(JSON.stringify({ workers: null }));
+          return;
+        }
+
         if (req.url === '/api/parallel' && req.method === 'POST') {
           let body = '';
           req.on('data', (c) => { body += c; });
