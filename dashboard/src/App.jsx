@@ -290,8 +290,8 @@ export function App() {
           {/* Radix UI + shadcn Tabs Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="flex items-center justify-center mb-6">
-              <TabsList className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-1">
-                <TabsTrigger value="ledger" className="gap-2 font-sans font-medium text-xs">
+              <TabsList className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-zinc-200/80 dark:border-zinc-800 p-1 rounded-xl shadow-xs">
+                <TabsTrigger value="ledger" className="gap-2 font-sans font-medium text-xs rounded-lg data-[state=active]:bg-zinc-100 dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs transition-all">
                   <Stack size={14} weight={activeTab === "ledger" ? "fill" : "regular"} />
                   <span>Incident Ledger</span>
                   {violations.length > 0 && (
@@ -301,12 +301,12 @@ export function App() {
                   )}
                 </TabsTrigger>
 
-                <TabsTrigger value="topology" className="gap-2 font-sans font-medium text-xs">
+                <TabsTrigger value="topology" className="gap-2 font-sans font-medium text-xs rounded-lg data-[state=active]:bg-zinc-100 dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs transition-all">
                   <GitFork size={14} weight={activeTab === "topology" ? "fill" : "regular"} />
                   <span>Process Topology</span>
                 </TabsTrigger>
 
-                <TabsTrigger value="parallel" className="gap-2 font-sans font-medium text-xs">
+                <TabsTrigger value="parallel" className="gap-2 font-sans font-medium text-xs rounded-lg data-[state=active]:bg-zinc-100 dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs transition-all">
                   <Cpu size={14} weight={activeTab === "parallel" ? "fill" : "regular"} />
                   <span>Parallel CI</span>
                   <Badge variant="outline" className="ml-1 text-[10px] py-0 px-1 border-cyan-500/40 text-cyan-600 dark:text-cyan-400 font-mono">
@@ -314,14 +314,14 @@ export function App() {
                   </Badge>
                 </TabsTrigger>
 
-                <TabsTrigger value="contract" className="gap-2 font-sans font-medium text-xs">
+                <TabsTrigger value="contract" className="gap-2 font-sans font-medium text-xs rounded-lg data-[state=active]:bg-zinc-100 dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs transition-all">
                   <FileCode size={14} weight={activeTab === "contract" ? "fill" : "regular"} />
                   <span>behavior.lock</span>
                 </TabsTrigger>
 
-                <TabsTrigger value="explainer" className="gap-2 font-sans font-medium text-xs">
+                <TabsTrigger value="explainer" className="gap-2 font-sans font-medium text-xs rounded-lg data-[state=active]:bg-zinc-100 dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-xs transition-all">
                   <BookOpen size={14} weight={activeTab === "explainer" ? "fill" : "regular"} />
-                  <span>Architecture & Explainer</span>
+                  <span>Architecture</span>
                 </TabsTrigger>
               </TabsList>
             </div>

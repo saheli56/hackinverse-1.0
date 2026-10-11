@@ -125,13 +125,13 @@ export function ParallelMonitor({ currentEnv = "non-prod" }) {
               </div>
               <div>
                 <CardTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  Parallel Instance Non-Prod Orchestrator
+                  Parallel Instance Orchestrator
                   <Badge variant="outline" className="text-[10px] uppercase font-mono tracking-wider border-cyan-500/30 text-cyan-600 dark:text-cyan-400">
-                    Concurrency Engine
+                    {targetEnv.toUpperCase()} • CONCURRENCY
                   </Badge>
                 </CardTitle>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  Configure custom workers, assign custom tasks, and execute in isolated sandboxes simultaneously
+                  Configure custom workers, assign tasks, and execute in isolated capability sandboxes concurrently
                 </p>
               </div>
             </div>
