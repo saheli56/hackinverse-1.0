@@ -121,7 +121,7 @@ export async function commandCheck(options = {}) {
     await commandUi({ cwd, engine: options.engine, cmd: options.cmd });
   }
 
-  if (!diffResult.passed) {
+  if (!diffResult.passed || runResult.exitCode !== 0) {
     process.exitCode = 1;
     return false;
   }
