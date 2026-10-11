@@ -30,16 +30,10 @@ export function Navbar({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700/80 flex items-center justify-center text-zinc-900 dark:text-zinc-100 shadow-sm">
-            <LockKey size={18} weight="duotone" className="text-cyan-600 dark:text-cyan-400" />
-          </div>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-sm tracking-tight text-zinc-900 dark:text-zinc-100 font-sans">behavior.lock</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-850 border border-zinc-200 dark:border-zinc-750 text-zinc-600 dark:text-zinc-400">
-              v1.0
-            </span>
-            <div className="hidden sm:flex items-center gap-1 text-[11px] text-zinc-500 dark:text-zinc-400 font-sans ml-2 pl-2 border-l border-zinc-200 dark:border-zinc-800">
-              <GitBranch size={11} className="text-zinc-400 dark:text-zinc-500" />
+            <span className="font-semibold text-[15px] tracking-tight text-zinc-900 dark:text-zinc-100 font-sans">behavior.lock</span>
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400 font-sans ml-2.5 pl-2.5 border-l border-zinc-200 dark:border-zinc-800">
+              <GitBranch size={12} className="text-zinc-400 dark:text-zinc-500" />
               <span className="font-medium text-zinc-700 dark:text-zinc-300">{targetName}</span>
             </div>
           </div>
@@ -72,20 +66,30 @@ export function Navbar({
             </button>
           )}
 
-          {/* Environment Profile Selector */}
+          {/* Premium Segmented Environment Switcher */}
           {onSwitchEnv && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-sans h-8">
-              <span className="text-[10px] text-zinc-500 font-medium">ENV:</span>
+            <div className="inline-flex items-center p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 h-8 shadow-inner">
               <button
-                onClick={() => onSwitchEnv(currentEnv === "prod" ? "non-prod" : "prod")}
-                title="Click to toggle between PROD and NON-PROD profiles"
-                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer ${
-                  currentEnv === "non-prod"
-                    ? "bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30"
-                    : "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                type="button"
+                onClick={() => onSwitchEnv("prod")}
+                className={`relative px-2.5 py-1 text-[11px] font-medium tracking-wide rounded-md transition-all duration-150 cursor-pointer ${
+                  currentEnv === "prod"
+                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200/80 dark:border-zinc-700/60"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
                 }`}
               >
-                {currentEnv || "prod"}
+                PROD
+              </button>
+              <button
+                type="button"
+                onClick={() => onSwitchEnv("non-prod")}
+                className={`relative px-2.5 py-1 text-[11px] font-medium tracking-wide rounded-md transition-all duration-150 cursor-pointer ${
+                  currentEnv === "non-prod"
+                    ? "bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-400 shadow-sm border border-zinc-200/80 dark:border-zinc-700/60"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
+                }`}
+              >
+                NON-PROD
               </button>
             </div>
           )}
