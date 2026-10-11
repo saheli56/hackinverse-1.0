@@ -80,7 +80,7 @@ export async function commandSimulate(subCommand = 'attack', options = {}) {
 \x1b[32m✔ File generated:\x1b[0m \x1b[1m${PAYLOAD_FILENAME}\x1b[0m in ${cwd}
 
 \x1b[1mHow to test behaviorlock now:\x1b[0m
-  \x1b[33mbehaviorlock check --cmd "node ${PAYLOAD_FILENAME}"\x1b[0m
+  \x1b[33mbehaviorlock check\x1b[0m \x1b[90m(auto-detects simulation payload)\x1b[0m
 
 \x1b[1mWhen you are done testing, clean up with:\x1b[0m
   \x1b[36mbehaviorlock simulate clean\x1b[0m

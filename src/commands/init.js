@@ -5,7 +5,7 @@
 
 import path from 'node:path';
 import fs from 'node:fs';
-import { Runner } from '../engine/runner.js';
+import { Runner, resolveExecutionCommand } from '../engine/runner.js';
 import { createEmptyLockfile, stringifyLockfile } from '../types/schema.js';
 import { Visualizer } from '../engine/visualizer.js';
 
@@ -13,21 +13,14 @@ export async function commandInit(options = {}) {
   const cwd = path.resolve(options.cwd || process.cwd());
   const lockfilePath = path.join(cwd, 'behavior.lock');
 
+  const { cmd, args, display } = resolveExecutionCommand(cwd, options.cmd);
+
   if (!options.silent) {
     Visualizer.printBanner();
-    Visualizer.printSessionContext({ cwd, cmd: options.cmd || 'npm test', engine: options.engine });
+    Visualizer.printSessionContext({ cwd, cmd: display, engine: options.engine });
   }
 
   const runner = new Runner({ cwd, engine: options.engine });
-
-  let cmd = 'npm';
-  let args = ['test', '--if-present'];
-
-  if (options.cmd) {
-    const parts = options.cmd.split(' ');
-    cmd = parts[0];
-    args = parts.slice(1);
-  }
 
   if (!options.silent) {
     Visualizer.printTargetFrameStart(`${cmd} ${args.join(' ')}`);

@@ -15,6 +15,44 @@ import { KernelTracer } from '../tracer/kernel.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export function resolveExecutionCommand(cwd, requestedCmd) {
+  if (requestedCmd) {
+    const parts = requestedCmd.trim().split(' ');
+    return { cmd: parts[0], args: parts.slice(1), display: requestedCmd };
+  }
+
+  // 1. Active simulation test payload
+  const simFile = path.join(cwd, '_behaviorlock_test.js');
+  if (fs.existsSync(simFile)) {
+    return { cmd: 'node', args: ['_behaviorlock_test.js'], display: 'node _behaviorlock_test.js' };
+  }
+
+  // 2. Local test.js or index.js
+  if (fs.existsSync(path.join(cwd, 'test.js'))) {
+    const pkgJsonPath = path.join(cwd, 'package.json');
+    if (fs.existsSync(pkgJsonPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+        if (pkg.scripts?.test && !pkg.scripts.test.includes('no test specified')) {
+          return { cmd: 'npm', args: ['test'], display: 'npm test' };
+        }
+      } catch {}
+    }
+    return { cmd: 'node', args: ['test.js'], display: 'node test.js' };
+  }
+
+  if (!fs.existsSync(path.join(cwd, 'package.json'))) {
+    if (fs.existsSync(path.join(cwd, 'index.js'))) {
+      return { cmd: 'node', args: ['index.js'], display: 'node index.js' };
+    }
+    if (fs.existsSync(path.join(cwd, 'app.js'))) {
+      return { cmd: 'node', args: ['app.js'], display: 'node app.js' };
+    }
+  }
+
+  return { cmd: 'npm', args: ['test', '--if-present'], display: 'npm test --if-present' };
+}
+
 export class Runner {
   constructor(options = {}) {
     this.cwd = path.resolve(options.cwd || process.cwd());

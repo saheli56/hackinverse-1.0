@@ -6,7 +6,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
-import { Runner } from '../engine/runner.js';
+import { Runner, resolveExecutionCommand } from '../engine/runner.js';
 import { Differ } from '../engine/differ.js';
 import { stringifyLockfile, validateLockfile } from '../types/schema.js';
 import { Visualizer } from '../engine/visualizer.js';
@@ -38,15 +38,8 @@ export async function commandApprove(id, options = {}) {
   Visualizer.printBanner();
 
   // Re-run to locate the violation matching the ID
+  const { cmd, args } = resolveExecutionCommand(cwd, options.cmd);
   const runner = new Runner({ cwd, engine: options.engine });
-  let cmd = 'npm';
-  let args = ['test', '--if-present'];
-  if (options.cmd) {
-    const parts = options.cmd.split(' ');
-    cmd = parts[0];
-    args = parts.slice(1);
-  }
-
   const runResult = runner.runPhase('runtime', cmd, args, { silent: true });
   const differ = new Differ(lockfileRaw);
   const diffResult = differ.diff(runResult.contract);
