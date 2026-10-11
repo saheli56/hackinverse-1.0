@@ -52,11 +52,11 @@ export function TopologyView({ data }) {
 
       <CardContent className="p-6">
         {/* SVG Interactive Canvas */}
-        <div className="relative overflow-x-auto bg-zinc-50 dark:bg-[#070709] rounded-lg p-6 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center min-h-[360px]">
-          <svg viewBox="0 0 920 340" className="w-full max-w-[920px] h-auto select-none">
-            {/* Bezier: Sandbox -> Package */}
+        <div className="relative overflow-x-auto bg-zinc-50 dark:bg-[#070709] rounded-lg p-6 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center min-h-[380px]">
+          <svg viewBox="0 0 980 340" className="w-full max-w-[980px] h-auto select-none">
+            {/* Bezier: Sandbox (right center: 190, 170) -> Package (left center: 320, 170) */}
             <path
-              d="M 190 170 C 270 170, 270 170, 350 170"
+              d="M 190 170 L 320 170"
               fill="none"
               stroke="#71717a"
               strokeWidth="2"
@@ -65,22 +65,22 @@ export function TopologyView({ data }) {
               <animate attributeName="stroke-dashoffset" values="20;0" dur="1.5s" repeatCount="indefinite" />
             </path>
 
-            {/* Bezier: Package -> Network */}
+            {/* Bezier: Package (right center: 510, 170) -> Outbound Sockets (left center: 690, 65) */}
             <path
-              d="M 540 170 C 630 170, 630 70, 720 70"
+              d="M 510 170 C 600 170, 600 65, 690 65"
               fill="none"
-              stroke={hasNetworkBreach ? "#f43f5e" : "#a1a1aa"}
+              stroke={hasNetworkBreach ? "#f43f5e" : "#52525b"}
               strokeWidth={hasNetworkBreach ? "2.5" : "1.5"}
-              strokeDasharray={hasNetworkBreach ? "8 4" : "none"}
+              strokeDasharray={hasNetworkBreach ? "8 4" : "4 4"}
             >
               {hasNetworkBreach && (
-                <animate attributeName="stroke-dashoffset" values="30;0" dur="0.8s" repeatCount="indefinite" />
+                <animate attributeName="stroke-dashoffset" values="24;0" dur="0.8s" repeatCount="indefinite" />
               )}
             </path>
 
-            {/* Bezier: Package -> Canary/FS */}
+            {/* Bezier: Package (right center: 510, 170) -> Decoy Canaries (left center: 690, 170) */}
             <path
-              d="M 540 170 C 630 170, 630 170, 720 170"
+              d="M 510 170 L 690 170"
               fill="none"
               stroke={hasCanaryBreach ? "#f43f5e" : "#10b981"}
               strokeWidth={hasCanaryBreach ? "2.5" : "2"}
@@ -89,33 +89,33 @@ export function TopologyView({ data }) {
               <animate attributeName="stroke-dashoffset" values="24;0" dur={hasCanaryBreach ? "0.6s" : "2s"} repeatCount="indefinite" />
             </path>
 
-            {/* Bezier: Package -> Process Exec */}
+            {/* Bezier: Package (right center: 510, 170) -> Child Processes (left center: 690, 275) */}
             <path
-              d="M 540 170 C 630 170, 630 270, 720 270"
+              d="M 510 170 C 600 170, 600 275, 690 275"
               fill="none"
-              stroke={hasExecBreach ? "#f43f5e" : "#a1a1aa"}
+              stroke={hasExecBreach ? "#f43f5e" : "#52525b"}
               strokeWidth={hasExecBreach ? "2.5" : "1.5"}
-              strokeDasharray={hasExecBreach ? "8 4" : "none"}
+              strokeDasharray={hasExecBreach ? "8 4" : "4 4"}
             >
               {hasExecBreach && (
-                <animate attributeName="stroke-dashoffset" values="30;0" dur="0.8s" repeatCount="indefinite" />
+                <animate attributeName="stroke-dashoffset" values="24;0" dur="0.8s" repeatCount="indefinite" />
               )}
             </path>
 
-            {/* Node 1: Kernel Sandbox */}
-            <g transform="translate(40, 125)">
-              <rect width="150" height="90" rx="8" fill="#18181b" stroke="#3f3f46" strokeWidth="1.5" />
-              <rect x="0" y="0" width="150" height="3" rx="1.5" fill="#38bdf8" />
-              <text x="75" y="42" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="600" fontFamily="Plus Jakarta Sans, sans-serif">
+            {/* Node 1: Kernel Sandbox (Center Y: 170, width: 160, height: 90) */}
+            <g transform="translate(30, 125)">
+              <rect width="160" height="90" rx="8" fill="#18181b" stroke="#3f3f46" strokeWidth="1.5" />
+              <rect x="0" y="0" width="160" height="3" rx="1.5" fill="#38bdf8" />
+              <text x="80" y="42" textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="600" fontFamily="Plus Jakarta Sans, sans-serif">
                 Node.js Sandbox
               </text>
-              <text x="75" y="62" textAnchor="middle" fill="#a1a1aa" fontSize="11" fontFamily="Plus Jakarta Sans, sans-serif">
+              <text x="80" y="62" textAnchor="middle" fill="#a1a1aa" fontSize="11" fontFamily="Plus Jakarta Sans, sans-serif">
                 V8 Preload Kernel
               </text>
             </g>
 
-            {/* Node 2: Traced Package */}
-            <g transform="translate(350, 125)">
+            {/* Node 2: Traced Package (Center Y: 170, width: 190, height: 90) */}
+            <g transform="translate(320, 125)">
               <rect 
                 width="190" 
                 height="90" 
@@ -133,7 +133,7 @@ export function TopologyView({ data }) {
                 fill={violations.length > 0 ? "#f43f5e" : "#10b981"} 
               />
               <text x="95" y="40" textAnchor="middle" fill="#ffffff" fontSize="14" fontWeight="600" fontFamily="Plus Jakarta Sans, sans-serif">
-                {packageList[0] || "slug-lib"}
+                {packageList[0] || "[project]"}
               </text>
               <text 
                 x="95" 
@@ -148,81 +148,81 @@ export function TopologyView({ data }) {
               </text>
             </g>
 
-            {/* Node 3A: Outbound Sockets */}
-            <g transform="translate(720, 25)">
+            {/* Node 3A: Outbound Sockets (Top: Y 25, Center Y: 65, width: 250, height: 80) */}
+            <g transform="translate(690, 25)">
               <rect 
-                width="170" 
+                width="250" 
                 height="80" 
                 rx="8" 
                 fill="#18181b" 
                 stroke={hasNetworkBreach ? "#f43f5e" : "#3f3f46"} 
                 strokeWidth={hasNetworkBreach ? "2" : "1.5"}
               />
-              <text x="85" y="34" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="600" fontFamily="Plus Jakarta Sans, sans-serif">
+              <text x="125" y="34" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="600" fontFamily="Plus Jakarta Sans, sans-serif">
                 Outbound Sockets
               </text>
               <text 
-                x="85" 
-                y="54" 
+                x="125" 
+                y="55" 
                 textAnchor="middle" 
                 fill={hasNetworkBreach ? "#f43f5e" : "#a1a1aa"} 
-                fontSize="10" 
+                fontSize="11" 
                 fontWeight={hasNetworkBreach ? "600" : "400"}
-                fontFamily="Plus Jakarta Sans, sans-serif"
+                fontFamily="ui-monospace, monospace"
               >
-                {hasNetworkBreach ? networkTarget : "Zero Sockets"}
+                {hasNetworkBreach ? (networkTarget.length > 28 ? networkTarget.slice(0, 26) + "…" : networkTarget) : "Zero Sockets"}
               </text>
             </g>
 
-            {/* Node 3B: Decoy Canaries */}
-            <g transform="translate(720, 130)">
+            {/* Node 3B: Decoy Canaries (Middle: Y 130, Center Y: 170, width: 250, height: 80) */}
+            <g transform="translate(690, 130)">
               <rect 
-                width="170" 
+                width="250" 
                 height="80" 
                 rx="8" 
                 fill="#18181b" 
                 stroke={hasCanaryBreach ? "#f43f5e" : "#10b981"} 
                 strokeWidth={hasCanaryBreach ? "2" : "1.5"}
               />
-              <text x="85" y="34" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="600" fontFamily="Plus Jakarta Sans, sans-serif">
+              <text x="125" y="34" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="600" fontFamily="Plus Jakarta Sans, sans-serif">
                 Decoy Honeypots
               </text>
               <text 
-                x="85" 
-                y="54" 
+                x="125" 
+                y="55" 
                 textAnchor="middle" 
                 fill={hasCanaryBreach ? "#f43f5e" : "#34d399"} 
-                fontSize="10" 
+                fontSize="11" 
                 fontWeight={hasCanaryBreach ? "600" : "400"}
-                fontFamily="Plus Jakarta Sans, sans-serif"
+                fontFamily="ui-monospace, monospace"
               >
-                {hasCanaryBreach ? "BREACH: " + canaryTarget : "Bait Secret Untouched"}
+                {hasCanaryBreach ? `BREACH: ${canaryTarget.length > 20 ? canaryTarget.slice(0, 18) + '…' : canaryTarget}` : "Bait Secret Untouched"}
               </text>
             </g>
 
-            {/* Node 3C: Process Exec */}
-            <g transform="translate(720, 235)">
+            {/* Node 3C: Child Processes (Bottom: Y 235, Center Y: 275, width: 250, height: 80) */}
+            <g transform="translate(690, 235)">
               <rect 
-                width="170" 
+                width="250" 
                 height="80" 
                 rx="8" 
                 fill="#18181b" 
                 stroke={hasExecBreach ? "#f43f5e" : "#3f3f46"} 
                 strokeWidth={hasExecBreach ? "2" : "1.5"}
               />
-              <text x="85" y="34" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="600" fontFamily="Plus Jakarta Sans, sans-serif">
+              <text x="125" y="34" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="600" fontFamily="Plus Jakarta Sans, sans-serif">
                 Child Processes
               </text>
               <text 
-                x="85" 
-                y="54" 
+                x="125" 
+                y="55" 
                 textAnchor="middle" 
                 fill={hasExecBreach ? "#f43f5e" : "#a1a1aa"} 
-                fontSize="10" 
+                fontSize="11" 
                 fontWeight={hasExecBreach ? "600" : "400"}
-                fontFamily="Plus Jakarta Sans, sans-serif"
+                fontFamily="ui-monospace, monospace"
               >
-                {hasExecBreach ? execTarget : "No Spawn Activity"}
+                {hasExecBreach ? (execTarget.length > 28 ? execTarget.slice(0, 26) + "…" : execTarget) : "No Spawn Activity"}
               </text>
             </g>
           </svg>
