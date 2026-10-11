@@ -118,14 +118,20 @@ export async function commandUi(options = {}) {
       req.on('data', chunk => { body += chunk; });
       req.on('end', async () => {
         try {
-          const { count = 3, env = currentEnv } = JSON.parse(body || '{}');
-          const parallelCount = Math.max(1, Math.min(8, parseInt(count, 10) || 3));
+          const { count = 3, env = currentEnv, tasks = [] } = JSON.parse(body || '{}');
           const targetEnv = normalizeEnv(env);
-          const startTime = Date.now();
           const binPath = path.resolve(__dirname, '../../bin/behaviorlock.js');
+          const workerList = tasks.length > 0
+            ? tasks
+            : Array.from({ length: Math.max(1, Math.min(8, parseInt(count, 10) || 3)) }, (_, i) => ({
+                id: `ci-worker-${i + 1}`,
+                cmd: options.cmd || 'npm test'
+              }));
 
-          const workers = Array.from({ length: parallelCount }, (_, idx) => {
-            const workerId = `ci-worker-${idx + 1}`;
+          const startTime = Date.now();
+          const workers = await Promise.all(workerList.map((task, idx) => {
+            const workerId = task.id || `ci-worker-${idx + 1}`;
+            const workerCmd = task.cmd || options.cmd || 'npm test';
             return new Promise((resolve) => {
               const started = Date.now();
               const child = spawn(process.execPath, [
@@ -134,8 +140,8 @@ export async function commandUi(options = {}) {
                 '--cwd', activeCwd,
                 '--env', targetEnv,
                 '--instance', workerId,
-                '--silent',
-                ...(options.cmd ? ['--cmd', options.cmd] : [])
+                '--cmd', workerCmd,
+                '--silent'
               ], {
                 cwd: activeCwd,
                 stdio: ['ignore', 'pipe', 'pipe']
@@ -145,6 +151,7 @@ export async function commandUi(options = {}) {
                 const duration = Date.now() - started;
                 resolve({
                   workerId,
+                  cmd: workerCmd,
                   code,
                   duration,
                   passed: code === 0,
@@ -154,9 +161,8 @@ export async function commandUi(options = {}) {
                 });
               });
             });
-          });
+          }));
 
-          const results = await Promise.all(workers);
           const totalDuration = Date.now() - startTime;
           const allPassed = results.every(r => r.passed);
 
