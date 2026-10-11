@@ -8,12 +8,14 @@ import fs from 'node:fs';
 import os from 'node:os';
 import { Runner, resolveExecutionCommand } from '../engine/runner.js';
 import { Differ } from '../engine/differ.js';
-import { stringifyLockfile, validateLockfile } from '../types/schema.js';
+import { stringifyLockfile, validateLockfile, normalizeEnv } from '../types/schema.js';
 import { Visualizer } from '../engine/visualizer.js';
 
 export async function commandApprove(id, options = {}) {
   const cwd = path.resolve(options.cwd || process.cwd());
   const lockfilePath = path.join(cwd, 'behavior.lock');
+  const env = options.env ? normalizeEnv(options.env) : 'prod';
+  const instance = options.instance || options.instanceId;
 
   if (!id) {
     console.error('\x1b[31m\x1b[1mError:\x1b[0m Missing violation ID to approve.');
@@ -39,9 +41,9 @@ export async function commandApprove(id, options = {}) {
 
   // Re-run to locate the violation matching the ID
   const { cmd, args } = resolveExecutionCommand(cwd, options.cmd);
-  const runner = new Runner({ cwd, engine: options.engine });
+  const runner = new Runner({ cwd, engine: options.engine, env, instanceId: instance });
   const runResult = runner.runPhase('runtime', cmd, args, { silent: true });
-  const differ = new Differ(lockfileRaw);
+  const differ = new Differ(lockfileRaw, env);
   const diffResult = differ.diff(runResult.contract);
 
   const targetViolation = diffResult.violations.find((v) => v.id === id);
@@ -71,6 +73,10 @@ export async function commandApprove(id, options = {}) {
     approved_at: new Date().toISOString().split('T')[0],
     expires: options.expires || null
   };
+
+  if (options.env) {
+    approvalRecord.env = normalizeEnv(options.env);
+  }
 
   lockfileRaw.approvals = lockfileRaw.approvals || [];
   lockfileRaw.approvals.push(approvalRecord);

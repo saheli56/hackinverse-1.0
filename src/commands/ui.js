@@ -38,7 +38,8 @@ export async function commandUi(options = {}) {
   let runResult;
   let differ;
 
-  const runner = new Runner({ cwd: activeCwd, engine: options.engine });
+  const env = options.env || 'prod';
+  const runner = new Runner({ cwd: activeCwd, engine: options.engine, env, instanceId: options.instance });
 
   const reloadData = () => {
     try {
@@ -58,7 +59,7 @@ export async function commandUi(options = {}) {
 
       const { cmd, args } = resolveExecutionCommand(activeCwd, options.cmd);
       runResult = runner.runPhase('runtime', cmd, args, { silent: true });
-      differ = new Differ(contract);
+      differ = new Differ(contract, env);
       diffResult = differ.diff(runResult.contract);
     } catch (err) {
       contract = contract || {

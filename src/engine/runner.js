@@ -57,6 +57,8 @@ export class Runner {
   constructor(options = {}) {
     this.cwd = path.resolve(options.cwd || process.cwd());
     this.engine = options.engine || 'runtime-hook';
+    this.instanceId = options.instanceId || options.instance || Math.random().toString(36).substring(2, 9);
+    this.env = options.env || 'prod';
     this.hookPath = path.resolve(__dirname, '../tracer/hook.cjs');
     this.kernelTracer = new KernelTracer(options);
   }
@@ -64,15 +66,17 @@ export class Runner {
   runPhase(phaseName, command, args = [], options = {}) {
     const traceDir = path.join(this.cwd, '.behaviorlock');
     fs.mkdirSync(traceDir, { recursive: true });
-    const traceFile = path.join(traceDir, `trace-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.jsonl`);
+    const traceFile = path.join(traceDir, `trace-${this.instanceId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.jsonl`);
 
-    const canary = new CanaryEngine();
+    const canary = new CanaryEngine(undefined, this.instanceId);
     const canarySetup = canary.plant();
 
     const normalizedHook = this.hookPath.replace(/\\/g, '/');
     const env = {
       ...process.env,
       ...canarySetup.envOverrides,
+      BEHAVIORLOCK_INSTANCE: this.instanceId,
+      BEHAVIORLOCK_ENV: this.env,
       BEHAVIORLOCK_TRACE_FILE: traceFile,
       BEHAVIORLOCK_PHASE: phaseName,
       BEHAVIORLOCK_CANARY_DIR: canarySetup.canaryDir,

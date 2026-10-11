@@ -10,7 +10,15 @@ import os from 'node:os';
 import { CanaryEngine, CANARY_TOKENS } from '../src/canary/index.js';
 import { Normalizer } from '../src/engine/normalizer.js';
 import { Differ } from '../src/engine/differ.js';
-import { createEmptyLockfile, stringifyLockfile, validateLockfile, SCHEMA_VERSION } from '../src/types/schema.js';
+import {
+  createEmptyLockfile,
+  stringifyLockfile,
+  validateLockfile,
+  normalizeEnv,
+  getPackagesForEnvironment,
+  setPackagesForEnvironment,
+  SCHEMA_VERSION
+} from '../src/types/schema.js';
 
 let passedCount = 0;
 
@@ -191,6 +199,135 @@ test('Differ: Respects signed approvals', () => {
   const res = differ.diff(observed);
   assert.strictEqual(res.passed, true);
   assert.strictEqual(res.approvedMatches.length, 1);
+});
+
+// 5. Multi-Environment & Parallel Testing
+test('Schema: normalizeEnv normalizes aliases correctly', () => {
+  assert.strictEqual(normalizeEnv('prod'), 'prod');
+  assert.strictEqual(normalizeEnv('production'), 'prod');
+  assert.strictEqual(normalizeEnv('test'), 'non-prod');
+  assert.strictEqual(normalizeEnv('non-prod'), 'non-prod');
+  assert.strictEqual(normalizeEnv('dev'), 'non-prod');
+  assert.strictEqual(normalizeEnv('staging'), 'non-prod');
+});
+
+test('Schema: Multi-environment profiles isolate prod and non-prod contracts', () => {
+  const lf = createEmptyLockfile();
+  const prodPkgs = { 'auth-pkg': { runtime: { network: ['api.prod.com:443'] } } };
+  const nonProdPkgs = { 'auth-pkg': { runtime: { network: ['api.prod.com:443', 'localhost:8080'] } } };
+
+  setPackagesForEnvironment(lf, 'prod', prodPkgs);
+  setPackagesForEnvironment(lf, 'non-prod', nonProdPkgs);
+
+  assert.deepStrictEqual(getPackagesForEnvironment(lf, 'prod'), prodPkgs);
+  assert.deepStrictEqual(getPackagesForEnvironment(lf, 'non-prod'), nonProdPkgs);
+  assert.deepStrictEqual(lf.packages, prodPkgs); // Root mirrors prod for backward compatibility
+});
+
+test('Differ: Environment isolation allows mock database in non-prod but blocks in prod', () => {
+  const lockfile = {
+    version: 1,
+    generated: '2026-10-11',
+    profiles: {
+      prod: {
+        packages: {
+          'db-client': {
+            runtime: { network: ['db.prod.internal:5432'], fs_read: [], fs_write: [], exec: [] }
+          }
+        }
+      },
+      'non-prod': {
+        packages: {
+          'db-client': {
+            runtime: { network: ['db.prod.internal:5432', 'localhost:5432'], fs_read: [], fs_write: [], exec: [] }
+          }
+        }
+      }
+    },
+    approvals: []
+  };
+
+  const observedTesting = {
+    'db-client': {
+      install: { network: [], fs_read: [], fs_write: [], exec: [] },
+      runtime: { network: ['localhost:5432'], fs_read: [], fs_write: [], exec: [] },
+      secrets: 'none'
+    }
+  };
+
+  // 1. In non-prod profile, localhost:5432 is explicitly allowed in baseline
+  const nonProdDiffer = new Differ(lockfile, 'non-prod');
+  const nonProdResult = nonProdDiffer.diff(observedTesting);
+  assert.strictEqual(nonProdResult.passed, true);
+  assert.strictEqual(nonProdResult.violations.length, 0);
+
+  // 2. In prod profile, localhost:5432 is strictly forbidden!
+  const prodDiffer = new Differ(lockfile, 'prod');
+  const prodResult = prodDiffer.diff(observedTesting);
+  assert.strictEqual(prodResult.passed, false);
+  assert.strictEqual(prodResult.violations.length, 1);
+  assert.strictEqual(prodResult.violations[0].target, 'localhost:5432');
+});
+
+test('Differ: Scoped approval applies only to specified environment', () => {
+  const lockfile = {
+    version: 1,
+    packages: {
+      'test-runner': {
+        runtime: { network: [], fs_read: [], fs_write: [], exec: [] }
+      }
+    },
+    approvals: [
+      {
+        id: '9988',
+        package: 'test-runner',
+        allow: { network: ['mock-collector.local:9000'] },
+        reason: 'Local test metrics collector',
+        env: 'non-prod' // strictly scoped to non-prod
+      }
+    ]
+  };
+
+  const observed = {
+    'test-runner': {
+      install: { network: [], fs_read: [], fs_write: [], exec: [] },
+      runtime: { network: ['mock-collector.local:9000'], fs_read: [], fs_write: [], exec: [] },
+      secrets: 'none'
+    }
+  };
+
+  // In non-prod, approval is valid
+  const nonProdDiffer = new Differ(lockfile, 'non-prod');
+  assert.strictEqual(nonProdDiffer.diff(observed).passed, true);
+
+  // In prod, non-prod approval is rejected!
+  const prodDiffer = new Differ(lockfile, 'prod');
+  const prodRes = prodDiffer.diff(observed);
+  assert.strictEqual(prodRes.passed, false);
+  assert.strictEqual(prodRes.violations.length, 1);
+});
+
+test('Parallelism: Independent canary instances avoid cross-worker collisions', () => {
+  const worker1Canary = new CanaryEngine(undefined, 'worker-1');
+  const worker2Canary = new CanaryEngine(undefined, 'worker-2');
+
+  const setup1 = worker1Canary.plant();
+  const setup2 = worker2Canary.plant();
+
+  // Distinct directories per instance
+  assert.notStrictEqual(setup1.canaryDir, setup2.canaryDir);
+  assert.ok(setup1.canaryDir.includes('worker-1'));
+  assert.ok(setup2.canaryDir.includes('worker-2'));
+  assert.ok(fs.existsSync(setup1.canaryDir));
+  assert.ok(fs.existsSync(setup2.canaryDir));
+
+  // Worker 1 cleanup should not delete Worker 2's active canaries
+  worker1Canary.cleanup();
+  assert.ok(!fs.existsSync(setup1.canaryDir));
+  assert.ok(fs.existsSync(setup2.canaryDir));
+
+  worker2Canary.cleanup();
+  assert.ok(!fs.existsSync(setup2.canaryDir));
 });
 
 console.log(`\n\x1b[32m\x1b[1mSummary: ${passedCount} tests passed!\x1b[0m\n`);

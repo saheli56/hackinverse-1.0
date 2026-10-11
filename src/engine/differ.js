@@ -4,11 +4,14 @@
  */
 
 import crypto from 'node:crypto';
+import { getPackagesForEnvironment, normalizeEnv } from '../types/schema.js';
 
 export class Differ {
-  constructor(baselineLockfile) {
+  constructor(baselineLockfile, env = 'prod') {
     this.baseline = baselineLockfile || { packages: {}, approvals: [] };
+    this.env = normalizeEnv(env);
     this.approvals = this.baseline.approvals || [];
+    this.packages = getPackagesForEnvironment(this.baseline, this.env);
   }
 
   diff(observedContract) {
@@ -16,7 +19,7 @@ export class Differ {
     const approvedMatches = [];
 
     for (const [pkgName, observedData] of Object.entries(observedContract)) {
-      const baselineData = this.baseline.packages?.[pkgName];
+      const baselineData = this.packages?.[pkgName];
 
       // 1. Check for Canary Breaches (Instant CRITICAL)
       if (Array.isArray(observedData.secrets) && observedData.secrets.length > 0) {
@@ -126,6 +129,9 @@ export class Differ {
 
   isApproved(pkgName, phase, signalType, target) {
     for (const app of this.approvals) {
+      if (app.env && normalizeEnv(app.env) !== this.env) {
+        continue;
+      }
       if (app.package === pkgName || app.package === '*') {
         const allowedTargets = app.allow?.[signalType] || [];
         if (allowedTargets.includes(target) || allowedTargets.includes('*')) {

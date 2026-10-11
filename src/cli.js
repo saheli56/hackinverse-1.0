@@ -36,6 +36,8 @@ export async function runCLI(args = process.argv.slice(2)) {
   const options = {
     cwd: targetCwd,
     engine: parsed.flags.engine || 'runtime-hook',
+    env: parsed.flags.env || parsed.flags.e || 'prod',
+    instance: parsed.flags.instance || parsed.flags.i,
     cmd: parsed.flags.cmd,
     silent: parsed.flags.silent || false,
     reason: parsed.flags.reason,
@@ -129,6 +131,8 @@ function printHelp() {
   --reason "<text>"     Audit justification required for approve
   --expires "<date>"    Optional expiration date \x1b[90m(e.g. 2027-01-01)\x1b[0m
   --open                Open the React Security Report in browser automatically
+  --env <name>          Profile: 'prod' or 'non-prod' / 'test' \x1b[90m(default: prod)\x1b[0m
+  --instance <id>       Instance isolation ID for parallel execution
   --silent              Suppress target stdout during tracing
   -v, --version         Show version
   -h, --help            Show help
@@ -136,6 +140,8 @@ function printHelp() {
 \x1b[1mEXAMPLES:\x1b[0m
   \x1b[90m$ \x1b[0mbehaviorlock init
   \x1b[90m$ \x1b[0mbehaviorlock check
+  \x1b[90m$ \x1b[0mbehaviorlock check --env non-prod
+  \x1b[90m$ \x1b[0mbehaviorlock check --env non-prod --instance worker-1
   \x1b[90m$ \x1b[0mbehaviorlock approve 4163 --reason "Vendor analytics reviewed and authorized"
 `);
 }

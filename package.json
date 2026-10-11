@@ -17,6 +17,7 @@
     "build:ui": "npm --prefix dashboard run build",
     "demo": "node demo/run-demo.js",
     "test": "node test/suite.js",
+    "test:parallel": "node demo/test-parallel.js",
     "test:safe": "node demo/test-scenario.js safe",
     "test:attack": "node demo/test-scenario.js attack",
     "test:telemetry": "node demo/test-scenario.js telemetry",

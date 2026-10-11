@@ -240,12 +240,23 @@ export class Visualizer {
     const cwd = info.cwd || process.cwd();
     const cmd = info.cmd || 'npm test';
     const engine = info.engine === 'kernel-strace' ? 'kernel-strace (Linux Syscall)' : 'runtime-hook (V8 Preload)';
+    const env = info.env ? String(info.env).toUpperCase() : 'PROD';
+    const envBadge = env === 'PROD'
+      ? `${ANSI.emerald}${ANSI.bold}PROD${ANSI.reset}`
+      : `${ANSI.purple}${ANSI.bold}${env}${ANSI.reset} ${ANSI.gray}(Isolated Profile)${ANSI.reset}`;
 
-    this.renderCard(`${ANSI.bold}Execution Context${ANSI.reset}`, [
-      `${ANSI.dim}Target:${ANSI.reset}   ${ANSI.white}${ANSI.bold}${path.basename(cwd)}${ANSI.reset} ${ANSI.gray}(${cwd})${ANSI.reset}`,
-      `${ANSI.dim}Command:${ANSI.reset}  ${ANSI.sky}${cmd}${ANSI.reset}`,
-      `${ANSI.dim}Engine:${ANSI.reset}   ${ANSI.dim}${engine}${ANSI.reset}`
-    ], { rounded: true });
+    const rows = [
+      `${ANSI.dim}Target:${ANSI.reset}      ${ANSI.white}${ANSI.bold}${path.basename(cwd)}${ANSI.reset} ${ANSI.gray}(${cwd})${ANSI.reset}`,
+      `${ANSI.dim}Command:${ANSI.reset}     ${ANSI.sky}${cmd}${ANSI.reset}`,
+      `${ANSI.dim}Profile:${ANSI.reset}     ${envBadge}`,
+      `${ANSI.dim}Engine:${ANSI.reset}      ${ANSI.dim}${engine}${ANSI.reset}`
+    ];
+
+    if (info.instance) {
+      rows.push(`${ANSI.dim}Instance:${ANSI.reset}    ${ANSI.amber}${info.instance}${ANSI.reset} ${ANSI.gray}(Parallel Safe)${ANSI.reset}`);
+    }
+
+    this.renderCard(`${ANSI.bold}Execution Context${ANSI.reset}`, rows, { rounded: true });
     console.log('');
   }
 
@@ -360,13 +371,22 @@ export class Visualizer {
   static renderApprovalReceipt(approvalRecord) {
     console.log(`${ANSI.emerald}${ANSI.bold}✔ VIOLATION APPROVED & SIGNED${ANSI.reset}\n`);
 
-    this.renderCard(`${ANSI.bold}Signed Contract Entry${ANSI.reset}`, [
+    const rows = [
       `${ANSI.dim}Violation ID:${ANSI.reset} ${ANSI.sky}${ANSI.bold}${approvalRecord.id}${ANSI.reset}`,
       `${ANSI.dim}Package:${ANSI.reset}      ${ANSI.white}${ANSI.bold}${approvalRecord.package}${ANSI.reset}`,
-      `${ANSI.dim}Permitted:${ANSI.reset}    ${JSON.stringify(approvalRecord.allow)}`,
+      `${ANSI.dim}Permitted:${ANSI.reset}    ${JSON.stringify(approvalRecord.allow)}`
+    ];
+
+    if (approvalRecord.env) {
+      rows.push(`${ANSI.dim}Environment:${ANSI.reset}  ${ANSI.purple}${approvalRecord.env.toUpperCase()}${ANSI.reset} ${ANSI.gray}(Scoped Approval)${ANSI.reset}`);
+    }
+
+    rows.push(
       `${ANSI.dim}Audit Reason:${ANSI.reset} ${ANSI.gold}"${approvalRecord.reason}"${ANSI.reset}`,
       `${ANSI.dim}Signed By:${ANSI.reset}    ${ANSI.white}${approvalRecord.approved_by}${ANSI.reset} ${ANSI.gray}on ${approvalRecord.approved_at}${ANSI.reset}`
-    ], { rounded: true, border: ANSI.darkGray });
+    );
+
+    this.renderCard(`${ANSI.bold}Signed Contract Entry${ANSI.reset}`, rows, { rounded: true, border: ANSI.darkGray });
 
     console.log(`\n${ANSI.gray}Commit ${ANSI.white}${ANSI.bold}behavior.lock${ANSI.reset}${ANSI.gray} to your repository with your pull request.${ANSI.reset}\n`);
   }

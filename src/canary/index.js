@@ -22,8 +22,10 @@ export const SENSITIVE_PATTERNS = [
 ];
 
 export class CanaryEngine {
-  constructor(canaryDir) {
-    this.canaryDir = canaryDir || path.join(os.tmpdir(), 'behaviorlock-canary-' + Math.random().toString(36).substring(2, 9));
+  constructor(canaryDir, instanceId) {
+    const id = instanceId || Math.random().toString(36).substring(2, 9);
+    this.instanceId = id;
+    this.canaryDir = canaryDir || path.join(os.tmpdir(), `behaviorlock-canary-${id}`);
     this.plantedPaths = [];
   }
 

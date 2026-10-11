@@ -8,12 +8,14 @@ import fs from 'node:fs';
 import { exec } from 'node:child_process';
 import { Runner, resolveExecutionCommand } from '../engine/runner.js';
 import { Differ } from '../engine/differ.js';
-import { validateLockfile } from '../types/schema.js';
+import { validateLockfile, normalizeEnv } from '../types/schema.js';
 import { Visualizer } from '../engine/visualizer.js';
 
 export async function commandCheck(options = {}) {
   const cwd = path.resolve(options.cwd || process.cwd());
   const lockfilePath = path.join(cwd, 'behavior.lock');
+  const env = normalizeEnv(options.env || 'prod');
+  const instance = options.instance || options.instanceId;
 
   if (!fs.existsSync(lockfilePath)) {
     console.error(`\x1b[31m\x1b[1mError:\x1b[0m No \x1b[1mbehavior.lock\x1b[0m found in ${cwd}`);
@@ -27,9 +29,9 @@ export async function commandCheck(options = {}) {
   const { cmd, args, display } = resolveExecutionCommand(cwd, options.cmd);
 
   Visualizer.printBanner();
-  Visualizer.printSessionContext({ cwd, cmd: display, engine: options.engine });
+  Visualizer.printSessionContext({ cwd, cmd: display, engine: options.engine, env, instance });
 
-  const runner = new Runner({ cwd, engine: options.engine });
+  const runner = new Runner({ cwd, engine: options.engine, env, instanceId: instance });
 
   if (!options.silent) {
     Visualizer.printTargetFrameStart(`${cmd} ${args.join(' ')}`);
@@ -41,7 +43,7 @@ export async function commandCheck(options = {}) {
     Visualizer.printTargetFrameEnd();
   }
 
-  const differ = new Differ(lockfileRaw);
+  const differ = new Differ(lockfileRaw, env);
   const diffResult = differ.diff(runResult.contract);
 
   const targetName = path.basename(cwd);
