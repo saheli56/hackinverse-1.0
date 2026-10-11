@@ -164,15 +164,15 @@ export async function commandUi(options = {}) {
           }));
 
           const totalDuration = Date.now() - startTime;
-          const allPassed = results.every(r => r.passed);
+          const allPassed = workers.every(r => r.passed);
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
             allPassed,
             totalDuration,
-            workerCount: parallelCount,
+            workerCount: workers.length,
             env: targetEnv,
-            workers: results
+            workers
           }));
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
