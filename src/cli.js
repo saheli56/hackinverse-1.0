@@ -9,6 +9,7 @@ import { commandCheck } from './commands/check.js';
 import { commandApprove } from './commands/approve.js';
 import { commandDiff } from './commands/diff.js';
 import { commandUi } from './commands/ui.js';
+import { commandSimulate } from './commands/simulate.js';
 
 export async function runCLI(args = process.argv.slice(2)) {
   const parsed = parseArgs(args);
@@ -61,6 +62,10 @@ export async function runCLI(args = process.argv.slice(2)) {
     case 'dashboard':
       await commandUi(options);
       break;
+    case 'simulate':
+    case 'test-kit':
+      await commandSimulate(parsed.positionals[0], { ...options, cwd: process.cwd() });
+      break;
     default:
       console.error(`\x1b[31m\x1b[1mUnknown command:\x1b[0m ${parsed.command}\n`);
       printHelp();
@@ -110,11 +115,12 @@ function printHelp() {
   behaviorlock \x1b[90m<command> [flags]\x1b[0m
 
 \x1b[1mCOMMANDS:\x1b[0m
-  init            Run target in sandbox and record baseline behavior.lock
-  check           Verify execution against behavior.lock (fails CI on breach)
-  approve <id>    Sign an approved behavioral change with an audit reason
-  diff            Inspect behavioral drift without blocking
-  ui              Open interactive React Security Dashboard in browser
+  init                  Run target in sandbox and record baseline behavior.lock
+  check                 Verify execution against behavior.lock (fails CI on breach)
+  approve <id>          Sign an approved behavioral change with an audit reason
+  diff                  Inspect behavioral drift without blocking
+  ui                    Open interactive React Security Dashboard in browser
+  simulate <attack|clean> Generate or clean up test exploit files in any repo
 
 \x1b[1mFLAGS:\x1b[0m
   --cwd <path>          Target directory \x1b[90m(default: .)\x1b[0m
