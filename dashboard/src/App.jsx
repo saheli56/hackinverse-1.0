@@ -6,11 +6,12 @@ import { BreachLedger } from "./components/BreachLedger";
 import { TopologyView } from "./components/TopologyView";
 import { ContractInspector } from "./components/ContractInspector";
 import { ArchitectureExplainer } from "./components/ArchitectureExplainer";
+import { ParallelMonitor } from "./components/ParallelMonitor";
 import { ApproveModal } from "./components/ApproveModal";
 import { CommandPalette } from "./components/CommandPalette";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/ui/tabs";
 import { Badge } from "./components/ui/badge";
-import { Stack, GitFork, FileCode, BookOpen, MagnifyingGlassPlus, MagnifyingGlassMinus } from "@phosphor-icons/react";
+import { Stack, GitFork, FileCode, BookOpen, Cpu, MagnifyingGlassPlus, MagnifyingGlassMinus } from "@phosphor-icons/react";
 
 // Fallback initial state if static or running standalone
 const DEFAULT_DATA = {
@@ -85,6 +86,12 @@ export function App() {
     return "safe";
   });
   const [isSwitchingScenario, setIsSwitchingScenario] = useState(false);
+  const [currentEnv, setCurrentEnv] = useState(() => {
+    if (typeof window !== "undefined" && window.__BEHAVIORLOCK_DATA__?.currentEnv) {
+      return window.__BEHAVIORLOCK_DATA__.currentEnv;
+    }
+    return "prod";
+  });
 
   // Poll or fetch live API if server is running
   useEffect(() => {
@@ -98,6 +105,7 @@ export function App() {
           if (json && json.diffResult) {
             setData(json);
             if (json.scenario) setActiveScenario(json.scenario);
+            if (json.currentEnv) setCurrentEnv(json.currentEnv);
           }
         }
       } catch {
@@ -175,13 +183,31 @@ export function App() {
     }
   };
 
-  const handleConfirmApproval = async ({ id, reason, approved_by }) => {
+  const handleSwitchEnv = async (newEnv) => {
+    setCurrentEnv(newEnv);
+    try {
+      const res = await fetch("/api/env", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ env: newEnv })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setData(updated);
+        if (updated.currentEnv) setCurrentEnv(updated.currentEnv);
+      }
+    } catch {
+      // Fallback
+    }
+  };
+
+  const handleConfirmApproval = async ({ id, reason, approved_by, env }) => {
     setIsSubmittingApproval(true);
     try {
       const res = await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, reason, approved_by })
+        body: JSON.stringify({ id, reason, approved_by, env })
       });
       if (res.ok) {
         const updated = await res.json();
@@ -241,6 +267,8 @@ export function App() {
           onOpenSearch={() => setIsSearchOpen(true)}
           theme={theme}
           onToggleTheme={toggleTheme}
+          currentEnv={currentEnv}
+          onSwitchEnv={handleSwitchEnv}
         />
 
         <main 
@@ -278,6 +306,14 @@ export function App() {
                   <span>Process Topology</span>
                 </TabsTrigger>
 
+                <TabsTrigger value="parallel" className="gap-2 font-sans font-medium text-xs">
+                  <Cpu size={14} weight={activeTab === "parallel" ? "fill" : "regular"} />
+                  <span>Parallel CI</span>
+                  <Badge variant="outline" className="ml-1 text-[10px] py-0 px-1 border-cyan-500/40 text-cyan-600 dark:text-cyan-400 font-mono">
+                    Multi-Instance
+                  </Badge>
+                </TabsTrigger>
+
                 <TabsTrigger value="contract" className="gap-2 font-sans font-medium text-xs">
                   <FileCode size={14} weight={activeTab === "contract" ? "fill" : "regular"} />
                   <span>behavior.lock</span>
@@ -299,6 +335,10 @@ export function App() {
 
             <TabsContent value="topology">
               <TopologyView data={data} />
+            </TabsContent>
+
+            <TabsContent value="parallel">
+              <ParallelMonitor currentEnv={currentEnv} />
             </TabsContent>
 
             <TabsContent value="contract">

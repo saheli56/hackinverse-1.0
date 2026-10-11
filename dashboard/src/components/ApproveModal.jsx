@@ -11,6 +11,7 @@ export function ApproveModal({ violation, onClose, onConfirm, isSubmitting }) {
 
   const [reason, setReason] = useState("Reviewed and authorized legitimate capability change");
   const [signer, setSigner] = useState("dev-lead");
+  const [scope, setScope] = useState("non-prod");
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,7 +29,8 @@ export function ApproveModal({ violation, onClose, onConfirm, isSubmitting }) {
     onConfirm({
       id: violation.id,
       reason: reason.trim(),
-      approved_by: signer.trim() || "engineer"
+      approved_by: signer.trim() || "engineer",
+      env: scope === "non-prod" ? "non-prod" : undefined
     });
   };
 
@@ -119,6 +121,38 @@ export function ApproveModal({ violation, onClose, onConfirm, isSubmitting }) {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5 font-sans">
+                    Environment Scope
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setScope("non-prod")}
+                      className={`p-2 rounded-lg border text-xs text-left font-sans transition-colors cursor-pointer ${
+                        scope === "non-prod"
+                          ? "border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold"
+                          : "border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                      }`}
+                    >
+                      <span className="block font-medium">Non-Prod Only</span>
+                      <span className="text-[10px] text-zinc-400 block mt-0.5">Applies to test/mock environments</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScope("global")}
+                      className={`p-2 rounded-lg border text-xs text-left font-sans transition-colors cursor-pointer ${
+                        scope === "global"
+                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
+                          : "border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                      }`}
+                    >
+                      <span className="block font-medium">All Environments</span>
+                      <span className="text-[10px] text-zinc-400 block mt-0.5">Authorizes in Prod & Non-Prod</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Live Git Diff Preview */}
                 <div>
                   <div className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 font-medium mb-1.5 font-sans">
@@ -130,6 +164,11 @@ export function ApproveModal({ violation, onClose, onConfirm, isSubmitting }) {
                     <span className="text-emerald-600 dark:text-emerald-400">+   &#123;</span><br />
                     <span className="text-emerald-600 dark:text-emerald-400">+     "id": "{violation.id}",</span><br />
                     <span className="text-emerald-600 dark:text-emerald-400">+     "package": "{violation.package}",</span><br />
+                    {scope === "non-prod" && (
+                      <>
+                        <span className="text-purple-500 dark:text-purple-400">+     "env": "non-prod",</span><br />
+                      </>
+                    )}
                     <span className="text-emerald-600 dark:text-emerald-400">+     "reason": "{reason.trim() || "..."}",</span><br />
                     <span className="text-emerald-600 dark:text-emerald-400">+     "approved_by": "{signer.trim() || "engineer"}",</span><br />
                     <span className="text-emerald-600 dark:text-emerald-400">+     "created_at": "{today}"</span><br />

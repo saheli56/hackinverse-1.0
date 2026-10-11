@@ -1,17 +1,12 @@
-/**
- * Command: behaviorlock ui
- * Launches the interactive 2026 React Security Studio (Server & Dynamic SPA)
- */
-
 import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { exec } from 'node:child_process';
+import { exec, spawn } from 'node:child_process';
 import { Visualizer } from '../engine/visualizer.js';
 import { Runner, resolveExecutionCommand } from '../engine/runner.js';
 import { Differ } from '../engine/differ.js';
-import { stringifyLockfile, validateLockfile } from '../types/schema.js';
+import { stringifyLockfile, validateLockfile, normalizeEnv, createEmptyLockfile } from '../types/schema.js';
 import { commandSimulate } from './simulate.js';
 
 export async function commandUi(options = {}) {
@@ -37,20 +32,13 @@ export async function commandUi(options = {}) {
   let diffResult;
   let runResult;
   let differ;
+  let currentEnv = normalizeEnv(options.env || 'prod');
 
-  const env = options.env || 'prod';
-  const runner = new Runner({ cwd: activeCwd, engine: options.engine, env, instanceId: options.instance });
-
-  const reloadData = () => {
+  const reloadData = (targetEnv = currentEnv) => {
+    currentEnv = normalizeEnv(targetEnv);
     try {
       if (!fs.existsSync(lockfilePath)) {
-        contract = {
-          version: 1,
-          generated: new Date().toISOString().split('T')[0],
-          sandbox: { engine: options.engine || 'runtime-hook (V8)', node: process.version, os: process.platform },
-          packages: {},
-          approvals: []
-        };
+        contract = createEmptyLockfile({ engine: options.engine });
         fs.writeFileSync(lockfilePath, stringifyLockfile(contract), 'utf8');
       } else {
         contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
@@ -58,17 +46,12 @@ export async function commandUi(options = {}) {
       }
 
       const { cmd, args } = resolveExecutionCommand(activeCwd, options.cmd);
+      const runner = new Runner({ cwd: activeCwd, engine: options.engine, env: currentEnv, instanceId: options.instance });
       runResult = runner.runPhase('runtime', cmd, args, { silent: true });
-      differ = new Differ(contract, env);
+      differ = new Differ(contract, currentEnv);
       diffResult = differ.diff(runResult.contract);
     } catch (err) {
-      contract = contract || {
-        version: 1,
-        generated: new Date().toISOString().split('T')[0],
-        sandbox: { engine: 'runtime-hook (V8)', node: process.version, os: process.platform },
-        packages: {},
-        approvals: []
-      };
+      contract = contract || createEmptyLockfile({ engine: options.engine });
       diffResult = diffResult || {
         passed: true,
         summary: { critical: 0, high: 0, medium: 0, total: 0 },
@@ -102,18 +85,103 @@ export async function commandUi(options = {}) {
 
     // GET /api/data (dynamic reload from disk)
     if (url.pathname === '/api/data' && req.method === 'GET') {
-      reloadData();
+      const queryEnv = url.searchParams.get('env');
+      if (queryEnv) currentEnv = normalizeEnv(queryEnv);
+      reloadData(currentEnv);
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ diffResult, contract, targetName }));
+      res.end(JSON.stringify({ diffResult, contract, targetName, currentEnv }));
+      return;
+    }
+
+    // POST /api/env (Switch active environment profile)
+    if (url.pathname === '/api/env' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const { env } = JSON.parse(body || '{}');
+          if (env) currentEnv = normalizeEnv(env);
+          reloadData(currentEnv);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ diffResult, contract, targetName, currentEnv }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+      });
+      return;
+    }
+
+    // POST /api/parallel (Run parallel sandboxed workers concurrently)
+    if (url.pathname === '/api/parallel' && req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const { count = 3, env = currentEnv } = JSON.parse(body || '{}');
+          const parallelCount = Math.max(1, Math.min(8, parseInt(count, 10) || 3));
+          const targetEnv = normalizeEnv(env);
+          const startTime = Date.now();
+          const binPath = path.resolve(__dirname, '../../bin/behaviorlock.js');
+
+          const workers = Array.from({ length: parallelCount }, (_, idx) => {
+            const workerId = `ci-worker-${idx + 1}`;
+            return new Promise((resolve) => {
+              const started = Date.now();
+              const child = spawn(process.execPath, [
+                binPath,
+                'check',
+                '--cwd', activeCwd,
+                '--env', targetEnv,
+                '--instance', workerId,
+                '--silent',
+                ...(options.cmd ? ['--cmd', options.cmd] : [])
+              ], {
+                cwd: activeCwd,
+                stdio: ['ignore', 'pipe', 'pipe']
+              });
+
+              child.on('close', (code) => {
+                const duration = Date.now() - started;
+                resolve({
+                  workerId,
+                  code,
+                  duration,
+                  passed: code === 0,
+                  env: targetEnv,
+                  canaryDir: `behaviorlock-canary-${workerId}`,
+                  traceFile: `trace-${workerId}.jsonl`
+                });
+              });
+            });
+          });
+
+          const results = await Promise.all(workers);
+          const totalDuration = Date.now() - startTime;
+          const allPassed = results.every(r => r.passed);
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            allPassed,
+            totalDuration,
+            workerCount: parallelCount,
+            env: targetEnv,
+            workers: results
+          }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+      });
       return;
     }
 
     // POST /api/check (Re-run sandbox telemetry check)
     if (url.pathname === '/api/check' && req.method === 'POST') {
       try {
-        reloadData();
+        reloadData(currentEnv);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ diffResult, contract, targetName }));
+        res.end(JSON.stringify({ diffResult, contract, targetName, currentEnv }));
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
@@ -181,7 +249,7 @@ export async function commandUi(options = {}) {
       req.on('data', chunk => { body += chunk; });
       req.on('end', () => {
         try {
-          const { id, reason, approved_by } = JSON.parse(body);
+          const { id, reason, approved_by, env } = JSON.parse(body);
           const targetViolation = diffResult?.violations?.find(v => v.id === id);
 
           if (!targetViolation) {
@@ -201,6 +269,10 @@ export async function commandUi(options = {}) {
             allow: {}
           };
 
+          if (env) {
+            approvalRecord.env = normalizeEnv(env);
+          }
+
           if (targetViolation.type === 'NETWORK_ANOMALY') {
             approvalRecord.allow.network = [targetViolation.target];
           } else if (targetViolation.type === 'PROCESS_SPAWN') {
@@ -218,10 +290,10 @@ export async function commandUi(options = {}) {
           fs.writeFileSync(lockfilePath, stringifyLockfile(contract), 'utf8');
 
           // Re-evaluate diff
-          reloadData();
+          reloadData(currentEnv);
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ diffResult, contract, targetName }));
+          res.end(JSON.stringify({ diffResult, contract, targetName, currentEnv }));
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err.message }));
@@ -232,8 +304,8 @@ export async function commandUi(options = {}) {
 
     // Serve HTML (Root) - dynamically read dist/index.html on every request so new builds reflect immediately
     if (url.pathname === '/' || url.pathname === '/index.html') {
-      reloadData();
-      const dataJson = JSON.stringify({ diffResult, contract, targetName }).replace(/</g, '\\u003c');
+      reloadData(currentEnv);
+      const dataJson = JSON.stringify({ diffResult, contract, targetName, currentEnv }).replace(/</g, '\\u003c');
       const injection = `<script>window.__BEHAVIORLOCK_DATA__ = ${dataJson};</script>`;
 
       let html;

@@ -17,7 +17,9 @@ export function Navbar({
   isRechecking, 
   onOpenSearch, 
   theme = "dark",
-  onToggleTheme
+  onToggleTheme,
+  currentEnv = "prod",
+  onSwitchEnv
 }) {
   const { diffResult = {}, targetName = "app" } = data;
   const passed = diffResult.passed ?? (diffResult.violations?.length === 0);
@@ -68,6 +70,24 @@ export function Navbar({
             >
               {theme === "dark" ? <Sun size={14} weight="bold" className="text-amber-400" /> : <Moon size={14} weight="bold" className="text-zinc-700" />}
             </button>
+          )}
+
+          {/* Environment Profile Selector */}
+          {onSwitchEnv && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-sans h-8">
+              <span className="text-[10px] text-zinc-500 font-medium">ENV:</span>
+              <button
+                onClick={() => onSwitchEnv(currentEnv === "prod" ? "non-prod" : "prod")}
+                title="Click to toggle between PROD and NON-PROD profiles"
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase transition-colors cursor-pointer ${
+                  currentEnv === "non-prod"
+                    ? "bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30"
+                    : "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                }`}
+              >
+                {currentEnv || "prod"}
+              </button>
+            </div>
           )}
 
           {/* Status Indicator */}
