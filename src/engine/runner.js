@@ -15,10 +15,44 @@ import { KernelTracer } from '../tracer/kernel.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export function parseCommandLineArgs(cmdString) {
+  if (!cmdString) return { cmd: 'npm', args: [] };
+  const args = [];
+  let current = '';
+  let inQuotes = false;
+  let quoteChar = '';
+
+  for (let i = 0; i < cmdString.length; i++) {
+    const char = cmdString[i];
+    if ((char === '"' || char === "'") && !inQuotes) {
+      inQuotes = true;
+      quoteChar = char;
+    } else if (char === quoteChar && inQuotes) {
+      inQuotes = false;
+      quoteChar = '';
+    } else if (char === ' ' && !inQuotes) {
+      if (current.length > 0) {
+        args.push(current);
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+  }
+  if (current.length > 0) {
+    args.push(current);
+  }
+
+  return {
+    cmd: args[0] || 'node',
+    args: args.slice(1)
+  };
+}
+
 export function resolveExecutionCommand(cwd, requestedCmd) {
   if (requestedCmd) {
-    const parts = requestedCmd.trim().split(' ');
-    return { cmd: parts[0], args: parts.slice(1), display: requestedCmd };
+    const { cmd, args } = parseCommandLineArgs(requestedCmd.trim());
+    return { cmd, args, display: requestedCmd };
   }
 
   // 1. Active simulation test payload
@@ -93,9 +127,9 @@ export class Runner {
         let execCmd = command;
         let execArgs = [...args];
         if (args.length === 0 && command.includes(' ')) {
-          const parts = command.split(' ');
-          execCmd = parts[0];
-          execArgs = parts.slice(1);
+          const parsed = parseCommandLineArgs(command);
+          execCmd = parsed.cmd;
+          execArgs = parsed.args;
         }
 
         const result = spawnSync(execCmd, execArgs, {
