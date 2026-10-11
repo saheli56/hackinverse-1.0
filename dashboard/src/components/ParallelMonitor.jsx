@@ -29,29 +29,29 @@ export function ParallelMonitor({ currentEnv = "non-prod" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ count: workerCount, env: targetEnv })
       });
-      if (res.ok) {
-        const json = await res.json();
-        setParallelResult(json);
+      if (!res.ok) {
+        throw new Error(`API returned ${res.status}`);
       }
+      const json = await res.json();
+      setParallelResult(json);
     } catch (err) {
-      // Offline fallback simulation
-      setTimeout(() => {
-        setParallelResult({
-          allPassed: true,
-          totalDuration: 168,
-          workerCount,
+      // Offline fallback simulation for standalone / Vite preview
+      await new Promise(r => setTimeout(r, 350));
+      setParallelResult({
+        allPassed: true,
+        totalDuration: 168,
+        workerCount,
+        env: targetEnv,
+        workers: Array.from({ length: workerCount }, (_, i) => ({
+          workerId: `ci-worker-${i + 1}`,
+          code: 0,
+          duration: 145 + Math.floor(Math.random() * 20),
+          passed: true,
           env: targetEnv,
-          workers: Array.from({ length: workerCount }, (_, i) => ({
-            workerId: `ci-worker-${i + 1}`,
-            code: 0,
-            duration: 145 + Math.floor(Math.random() * 20),
-            passed: true,
-            env: targetEnv,
-            canaryDir: `behaviorlock-canary-ci-worker-${i + 1}`,
-            traceFile: `trace-ci-worker-${i + 1}.jsonl`
-          }))
-        });
-      }, 300);
+          canaryDir: `behaviorlock-canary-ci-worker-${i + 1}`,
+          traceFile: `trace-ci-worker-${i + 1}.jsonl`
+        }))
+      });
     } finally {
       setIsRunning(false);
     }

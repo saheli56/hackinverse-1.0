@@ -230,6 +230,55 @@ function dynamicDiskApiPlugin() {
           return;
         }
 
+        if (req.url === '/api/parallel' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (c) => { body += c; });
+          req.on('end', () => {
+            try {
+              const { count = 3, env = 'non-prod' } = JSON.parse(body || '{}');
+              const workerCount = Math.max(1, Math.min(8, parseInt(count, 10) || 3));
+              const workers = Array.from({ length: workerCount }, (_, i) => ({
+                workerId: `ci-worker-${i + 1}`,
+                code: 0,
+                duration: 140 + Math.floor(Math.random() * 25),
+                passed: true,
+                env,
+                canaryDir: `behaviorlock-canary-ci-worker-${i + 1}`,
+                traceFile: `trace-ci-worker-${i + 1}.jsonl`
+              }));
+              const totalDuration = 165 + Math.floor(Math.random() * 20);
+              res.end(JSON.stringify({
+                allPassed: true,
+                totalDuration,
+                workerCount,
+                env,
+                workers
+              }));
+            } catch {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: 'Invalid JSON' }));
+            }
+          });
+          return;
+        }
+
+        if (req.url === '/api/env' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (c) => { body += c; });
+          req.on('end', () => {
+            try {
+              const { env = 'prod' } = JSON.parse(body || '{}');
+              const state = buildCurrentState();
+              state.currentEnv = env;
+              res.end(JSON.stringify(state));
+            } catch {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: 'Invalid JSON' }));
+            }
+          });
+          return;
+        }
+
         next();
       });
     }
