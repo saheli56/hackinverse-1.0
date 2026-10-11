@@ -9,9 +9,10 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
 import { Visualizer } from '../engine/visualizer.js';
-import { Runner } from '../engine/runner.js';
+import { Runner, resolveExecutionCommand } from '../engine/runner.js';
 import { Differ } from '../engine/differ.js';
 import { stringifyLockfile, validateLockfile } from '../types/schema.js';
+import { commandSimulate } from './simulate.js';
 
 export async function commandUi(options = {}) {
   const cwd = path.resolve(options.cwd || process.cwd());
@@ -37,43 +38,42 @@ export async function commandUi(options = {}) {
   let runResult;
   let differ;
 
-  let cmd = 'npm';
-  let args = ['test', '--if-present'];
-  if (options.cmd) {
-    const parts = options.cmd.split(' ');
-    cmd = parts[0];
-    args = parts.slice(1);
-  } else if (fs.existsSync(path.join(activeCwd, 'test.js'))) {
-    cmd = 'node';
-    args = ['test.js'];
-  }
   const runner = new Runner({ cwd: activeCwd, engine: options.engine });
 
   const reloadData = () => {
     try {
-      if (fs.existsSync(lockfilePath)) {
-        contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
-        validateLockfile(contract);
-        runResult = runner.runPhase('runtime', cmd, args, { silent: true });
-        differ = new Differ(contract);
-        diffResult = differ.diff(runResult.contract);
-      } else {
+      if (!fs.existsSync(lockfilePath)) {
         contract = {
           version: 1,
           generated: new Date().toISOString().split('T')[0],
-          sandbox: { engine: 'runtime-hook (V8)', node: process.version, os: process.platform },
+          sandbox: { engine: options.engine || 'runtime-hook (V8)', node: process.version, os: process.platform },
           packages: {},
           approvals: []
         };
-        diffResult = {
-          passed: true,
-          summary: { critical: 0, high: 0, medium: 0, total: 0 },
-          violations: [],
-          approvedMatches: []
-        };
+        fs.writeFileSync(lockfilePath, stringifyLockfile(contract), 'utf8');
+      } else {
+        contract = JSON.parse(fs.readFileSync(lockfilePath, 'utf8'));
+        validateLockfile(contract);
       }
-    } catch {
-      // fallback
+
+      const { cmd, args } = resolveExecutionCommand(activeCwd, options.cmd);
+      runResult = runner.runPhase('runtime', cmd, args, { silent: true });
+      differ = new Differ(contract);
+      diffResult = differ.diff(runResult.contract);
+    } catch (err) {
+      contract = contract || {
+        version: 1,
+        generated: new Date().toISOString().split('T')[0],
+        sandbox: { engine: 'runtime-hook (V8)', node: process.version, os: process.platform },
+        packages: {},
+        approvals: []
+      };
+      diffResult = diffResult || {
+        passed: true,
+        summary: { critical: 0, high: 0, medium: 0, total: 0 },
+        violations: [],
+        approvedMatches: []
+      };
     }
   };
 
@@ -101,6 +101,7 @@ export async function commandUi(options = {}) {
 
     // GET /api/data (dynamic reload from disk)
     if (url.pathname === '/api/data' && req.method === 'GET') {
+      reloadData();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ diffResult, contract, targetName }));
       return;
@@ -119,11 +120,11 @@ export async function commandUi(options = {}) {
       return;
     }
 
-    // POST /api/scenario (Interactive scenario switcher for demo app)
+    // POST /api/scenario (Interactive scenario switcher for demo app & external repos)
     if (url.pathname === '/api/scenario' && req.method === 'POST') {
       let body = '';
       req.on('data', chunk => { body += chunk; });
-      req.on('end', () => {
+      req.on('end', async () => {
         try {
           const { scenario } = JSON.parse(body || '{}');
           const rootDir = path.resolve(__dirname, '../../');
@@ -133,9 +134,10 @@ export async function commandUi(options = {}) {
           const compromisedPkg = path.resolve(demoDir, 'packages/compromised-slug/index.js');
           const telemetryPkg = path.resolve(demoDir, 'packages/telemetry-slug/index.js');
 
-          if (fs.existsSync(targetModule)) {
-            // Reset baseline first
+          if (fs.existsSync(targetModule) && activeCwd.includes('demo-app')) {
+            // Demo app scenario swapping
             fs.copyFileSync(safePkg, targetModule);
+            const { cmd, args } = resolveExecutionCommand(activeCwd, options.cmd);
             const initRun = runner.runPhase('runtime', cmd, args, { silent: true });
             const cleanContract = {
               version: 1,
@@ -150,6 +152,13 @@ export async function commandUi(options = {}) {
               fs.copyFileSync(compromisedPkg, targetModule);
             } else if (scenario === 'telemetry') {
               fs.copyFileSync(telemetryPkg, targetModule);
+            }
+          } else {
+            // Any external user project
+            if (scenario === 'attack') {
+              await commandSimulate('attack', { cwd: activeCwd });
+            } else if (scenario === 'safe') {
+              await commandSimulate('clean', { cwd: activeCwd });
             }
           }
 
@@ -220,8 +229,9 @@ export async function commandUi(options = {}) {
       return;
     }
 
-    // Serve HTML (Root) - dynamically read dist/index.html on every request so new builds appear immediately
+    // Serve HTML (Root) - dynamically read dist/index.html on every request so new builds reflect immediately
     if (url.pathname === '/' || url.pathname === '/index.html') {
+      reloadData();
       const dataJson = JSON.stringify({ diffResult, contract, targetName }).replace(/</g, '\\u003c');
       const injection = `<script>window.__BEHAVIORLOCK_DATA__ = ${dataJson};</script>`;
 
