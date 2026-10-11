@@ -66,7 +66,7 @@ export async function runCLI(args = process.argv.slice(2)) {
       break;
     case 'simulate':
     case 'test-kit':
-      await commandSimulate(parsed.positionals[0], { ...options, cwd: process.cwd() });
+      await commandSimulate(parsed.positionals[0], options);
       break;
     default:
       console.error(`\x1b[31m\x1b[1mUnknown command:\x1b[0m ${parsed.command}\n`);
