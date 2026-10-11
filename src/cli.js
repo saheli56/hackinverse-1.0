@@ -38,6 +38,7 @@ export async function runCLI(args = process.argv.slice(2)) {
     engine: parsed.flags.engine || 'runtime-hook',
     env: parsed.flags.env || parsed.flags.e || 'prod',
     instance: parsed.flags.instance || parsed.flags.i,
+    parallel: parsed.flags.parallel || parsed.flags.p,
     cmd: parsed.flags.cmd,
     silent: parsed.flags.silent || false,
     reason: parsed.flags.reason,
@@ -133,6 +134,7 @@ function printHelp() {
   --open                Open the React Security Report in browser automatically
   --env <name>          Profile: 'prod' or 'non-prod' / 'test' \x1b[90m(default: prod)\x1b[0m
   --instance <id>       Instance isolation ID for parallel execution
+  --parallel [count]    Run N parallel sandboxed instances concurrently \x1b[90m(default: 3)\x1b[0m
   --silent              Suppress target stdout during tracing
   -v, --version         Show version
   -h, --help            Show help
@@ -141,7 +143,7 @@ function printHelp() {
   \x1b[90m$ \x1b[0mbehaviorlock init
   \x1b[90m$ \x1b[0mbehaviorlock check
   \x1b[90m$ \x1b[0mbehaviorlock check --env non-prod
-  \x1b[90m$ \x1b[0mbehaviorlock check --env non-prod --instance worker-1
+  \x1b[90m$ \x1b[0mbehaviorlock check --parallel 3 --env non-prod
   \x1b[90m$ \x1b[0mbehaviorlock approve 4163 --reason "Vendor analytics reviewed and authorized"
 `);
 }
