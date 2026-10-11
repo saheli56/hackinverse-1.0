@@ -39,6 +39,7 @@ export async function runCLI(args = process.argv.slice(2)) {
     env: parsed.flags.env || parsed.flags.e || 'prod',
     instance: parsed.flags.instance || parsed.flags.i,
     parallel: parsed.flags.parallel || parsed.flags.p,
+    tasks: parsed.flags.tasks,
     cmd: parsed.flags.cmd,
     silent: parsed.flags.silent || false,
     reason: parsed.flags.reason,

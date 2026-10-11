@@ -33,12 +33,13 @@ export async function commandCheck(options = {}) {
 
   const { cmd, args, display } = resolveExecutionCommand(cwd, options.cmd);
 
-  const parallelCount = options.parallel === true ? 3 : (parseInt(options.parallel, 10) || 1);
+  const taskList = options.tasks ? options.tasks.split(',').map(s => s.trim()).filter(Boolean) : null;
+  const parallelCount = taskList ? taskList.length : (options.parallel === true ? 3 : (parseInt(options.parallel, 10) || 1));
   if (parallelCount > 1) {
     Visualizer.printBanner();
     Visualizer.printSessionContext({
       cwd,
-      cmd: display,
+      cmd: taskList ? taskList.join(' | ') : display,
       engine: options.engine,
       env,
       instance: `${parallelCount} Parallel Workers`
@@ -49,6 +50,7 @@ export async function commandCheck(options = {}) {
 
     const workers = Array.from({ length: parallelCount }, (_, idx) => {
       const workerId = options.instance ? `${options.instance}-${idx + 1}` : `worker-${idx + 1}`;
+      const workerCmd = taskList ? taskList[idx] : options.cmd;
       return new Promise((resolve) => {
         const started = Date.now();
         const child = spawn(process.execPath, [
@@ -58,7 +60,7 @@ export async function commandCheck(options = {}) {
           '--env', env,
           '--instance', workerId,
           '--silent',
-          ...(options.cmd ? ['--cmd', options.cmd] : [])
+          ...(workerCmd ? ['--cmd', workerCmd] : [])
         ], {
           cwd,
           stdio: ['ignore', 'pipe', 'pipe']
@@ -68,8 +70,9 @@ export async function commandCheck(options = {}) {
           const duration = Date.now() - started;
           const passed = code === 0;
           const icon = passed ? '\x1b[32m✔\x1b[0m' : '\x1b[31m✗\x1b[0m';
-          console.log(`  ${icon} Instance \x1b[1m${workerId}\x1b[0m completed in \x1b[36m${duration}ms\x1b[0m (Exit code: ${code})`);
-          resolve({ workerId, code, duration, passed });
+          const cmdLabel = workerCmd ? ` [${workerCmd}]` : '';
+          console.log(`  ${icon} Instance \x1b[1m${workerId}\x1b[0m${cmdLabel} completed in \x1b[36m${duration}ms\x1b[0m (Exit code: ${code})`);
+          resolve({ workerId, cmd: workerCmd, code, duration, passed });
         });
       });
     });
